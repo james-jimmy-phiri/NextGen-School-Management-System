@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    ports:
+      - '55432:5432'
+    environment:
+      POSTGRES_DB: nextgen_school
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - nextgen_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '46379:6379'
+    volumes:
+      - nextgen_redis:/data
+
+volumes:
+  nextgen_pgdata:
+  nextgen_redis:

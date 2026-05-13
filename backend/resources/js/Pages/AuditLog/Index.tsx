@@ -19,6 +19,8 @@ interface AuditLog {
     created_at: string;
 }
 
+
+
 interface Props extends PageProps {
     logs: LaravelPagination<AuditLog>;
     filters: {

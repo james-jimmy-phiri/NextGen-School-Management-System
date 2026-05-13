@@ -5,12 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/**
- * @mixin \App\Models\User
- */
 class UserResource extends JsonResource
 {
     /**
+     * Transform the resource into an array.
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
@@ -20,11 +19,17 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
-            'avatar_path' => $this->avatar_path,
-            'school_id' => $this->school_id,
-            'roles' => $this->getRoleNames(),
-            'permissions' => $this->getAllPermissions()->pluck('name'),
-            'school' => $this->whenLoaded('school', fn () => SchoolResource::make($this->school)),
+            'status' => $this->status,
+            'avatar_initials' => $this->avatar_initials,
+            'last_login_at' => $this->last_login_at?->toDateTimeString(),
+            'last_login_ip' => $this->last_login_ip,
+            'school' => [
+                'id' => $this->school?->id,
+                'name' => $this->school?->name,
+            ],
+            'role' => $this->roles->first()?->name,
+            'permissions' => $this->getPermissionNames(),
+            'created_at' => $this->created_at->toDateTimeString(),
         ];
     }
 }

@@ -15,6 +15,7 @@ export interface AuthUser {
     email_verified_at?: string | null;
     school_id?: number | null;
     roles: string[];
+    permissions?: string[];
     preferences?: Record<string, unknown> | null;
     school?: SharedSchool | null;
 }
@@ -28,6 +29,7 @@ export type PageProps<
     capabilities?: Record<string, boolean>;
     flash?: {
         status?: string | null;
+        success?: string | null;
         error?: string | null;
     };
 };
@@ -41,6 +43,10 @@ export interface PaginationLink {
 export interface LaravelPagination<TItem> {
     data: TItem[];
     links: PaginationLink[];
+    meta?: {
+        links: PaginationLink[];
+        [key: string]: any;
+    };
     current_page: number;
     last_page: number;
     per_page: number;

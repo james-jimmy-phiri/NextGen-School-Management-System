@@ -1,30 +1,30 @@
 <?php
 
-use App\Http\Controllers\Api\V1\AttendanceApiController;
 use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\DashboardApiController;
-use App\Http\Controllers\Api\V1\SchoolApiController;
-use App\Http\Controllers\Api\V1\StudentApiController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->middleware('resolve.tenant')->group(function (): void {
-    Route::post('auth/token', [AuthController::class, 'token'])
-        ->middleware('throttle:login');
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
 
-    Route::middleware(['auth:sanctum'])->group(function (): void {
-        Route::delete('auth/token', [AuthController::class, 'destroy']);
-        Route::get('auth/profile', [AuthController::class, 'profile']);
+Route::prefix('v1')->group(function () {
+    // ─── Authentication ──────────────────────────────────────────────────────
+    Route::post('/auth/login', [AuthController::class, 'login']);
 
-        Route::get('dashboard', DashboardApiController::class);
-
-        Route::get('schools', [SchoolApiController::class, 'index']);
-        Route::post('schools', [SchoolApiController::class, 'store']);
-        Route::patch('schools/{school}', [SchoolApiController::class, 'update']);
-
-        Route::get('students', [StudentApiController::class, 'index']);
-        Route::post('students', [StudentApiController::class, 'store']);
-        Route::get('students/{student}', [StudentApiController::class, 'show']);
-
-        Route::post('attendance/sync', [AttendanceApiController::class, 'sync']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
     });
+});
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
 });

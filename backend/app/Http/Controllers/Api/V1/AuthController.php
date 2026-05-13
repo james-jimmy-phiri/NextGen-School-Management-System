@@ -5,45 +5,51 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function token(Request $request)
+    public function login(Request $request)
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:6'],
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'device_name' => 'required',
         ]);
 
-        $user = User::with(['school'])->where('email', $validated['email'])->first();
+        $user = User::where('email', $request->email)->first();
 
-        if ($user === null || ! Hash::check($validated['password'], $user->password)) {
-            return ApiResponse::error(__('These credentials do not match our records.'), 401);
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
         }
 
-        $token = $user->createToken('nextgen-mobile')->plainTextToken;
+        if ($user->status !== 'active') {
+            return response()->json([
+                'message' => 'Your account is '.$user->status.'.',
+            ], 403);
+        }
 
-        return ApiResponse::success([
+        $token = $user->createToken($request->device_name)->plainTextToken;
+
+        return response()->json([
             'token' => $token,
-            'token_type' => 'Bearer',
-            'user' => UserResource::make($user),
+            'user' => new UserResource($user),
         ]);
     }
 
-    public function destroy(Request $request)
+    public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()?->delete();
+        $request->user()->currentAccessToken()->delete();
 
-        return ApiResponse::success(['revoked' => true]);
+        return response()->json(['message' => 'Logged out successfully.']);
     }
 
-    public function profile(Request $request)
+    public function me(Request $request)
     {
-        $user = $request->user()->load(['school']);
-
-        return ApiResponse::success(UserResource::make($user));
+        return new UserResource($request->user());
     }
 }

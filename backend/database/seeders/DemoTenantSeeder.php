@@ -25,27 +25,36 @@ use Illuminate\Support\Facades\Hash;
 
 class DemoTenantSeeder extends Seeder
 {
+    /**
+     * Shared demo password for all seeded accounts.
+     * Display this on the login page in development.
+     */
     protected string $demoPassword = 'Demo#2026Pass';
 
     public function run(): void
     {
         DB::transaction(function (): void {
+
+            // ─── 1. Platform Super Admin ──────────────────────────────────────
             $platform = User::query()->updateOrCreate(
-                ['email' => 'super.admin@nextgen.africa'],
+                ['email' => 'super.admin@nextgen.mw'],
                 [
                     'name' => 'Platform Super Administrator',
                     'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991000001',
                     'school_id' => null,
+                    'status' => 'active',
                     'email_verified_at' => Carbon::now(),
                 ]
             );
             $platform->syncRoles(['super_admin']);
 
+            // ─── 2. Demo School — Sunrise Academy, Lilongwe ───────────────────
             $school = School::query()->updateOrCreate(
-                ['slug' => 'horizon-international'],
+                ['slug' => 'sunrise-academy'],
                 [
-                    'name' => 'Horizon International School',
-                    'timezone' => 'Africa/Lagos',
+                    'name' => 'Sunrise Academy',
+                    'timezone' => 'Africa/Blantyre',
                     'locale' => 'en',
                     'settings' => [
                         'finance' => ['currency' => 'MWK', 'rounding' => 2],
@@ -60,9 +69,10 @@ class DemoTenantSeeder extends Seeder
 
             $campus = Campus::query()->firstOrCreate(
                 ['school_id' => $school->id, 'name' => 'Main Campus'],
-                ['address' => 'Victoria Island, Lagos', 'phone' => '+234800000001']
+                ['address' => 'Area 47, Lilongwe, Malawi', 'phone' => '+265111234567']
             );
 
+            // ─── 3. Academic Year & Term ──────────────────────────────────────
             AcademicYear::query()->where('school_id', $school->id)->update(['is_current' => false]);
 
             $academicYear = AcademicYear::query()->updateOrCreate(
@@ -84,130 +94,227 @@ class DemoTenantSeeder extends Seeder
                 ]
             );
 
+            // ─── 4. Grade & Subjects ──────────────────────────────────────────
             $grade = GradeLevel::query()->firstOrCreate(
-                ['school_id' => $school->id, 'code' => 'GRADE-10'],
-                ['label' => 'Grade 10', 'sort_order' => 10]
+                ['school_id' => $school->id, 'code' => 'FORM-3'],
+                ['label' => 'Form 3', 'sort_order' => 3]
             );
 
             Subject::query()->firstOrCreate(
                 ['school_id' => $school->id, 'code' => 'MATH'],
                 ['name' => 'Mathematics', 'gpa_weight' => 1.2]
             );
-
             Subject::query()->firstOrCreate(
                 ['school_id' => $school->id, 'code' => 'ENG'],
                 ['name' => 'English Language', 'gpa_weight' => 1.0]
             );
+            Subject::query()->firstOrCreate(
+                ['school_id' => $school->id, 'code' => 'SCI'],
+                ['name' => 'Integrated Science', 'gpa_weight' => 1.1]
+            );
 
-            $admin = User::query()->updateOrCreate(
-                ['email' => 'admin@horizon.demo'],
+            // ─── 5. Staff Users ───────────────────────────────────────────────
+
+            // School Director
+            $director = User::query()->updateOrCreate(
+                ['email' => 'director@sunrise.demo'],
                 [
-                    'name' => 'Amaka School Admin',
+                    'name' => 'Chisomo Banda',
                     'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100001',
                     'school_id' => $school->id,
+                    'status' => 'active',
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+            $director->syncRoles(['school_director']);
+
+            // School Admin
+            $admin = User::query()->updateOrCreate(
+                ['email' => 'admin@sunrise.demo'],
+                [
+                    'name' => 'Thandiwe Phiri',
+                    'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100002',
+                    'school_id' => $school->id,
+                    'status' => 'active',
                     'email_verified_at' => Carbon::now(),
                 ]
             );
             $admin->syncRoles(['school_admin']);
 
-            $teacher = User::query()->updateOrCreate(
-                ['email' => 'teacher@horizon.demo'],
-                [
-                    'name' => 'Chinedu Classroom Teacher',
-                    'password' => Hash::make($this->demoPassword),
-                    'school_id' => $school->id,
-                    'email_verified_at' => Carbon::now(),
-                ]
-            );
-            $teacher->syncRoles(['teacher']);
-
+            // Accountant / Bursar
             $accountant = User::query()->updateOrCreate(
-                ['email' => 'finance@horizon.demo'],
+                ['email' => 'finance@sunrise.demo'],
                 [
-                    'name' => 'Zainab Chief Accountant',
+                    'name' => 'Kondwani Mwale',
                     'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100003',
                     'school_id' => $school->id,
+                    'status' => 'active',
                     'email_verified_at' => Carbon::now(),
                 ]
             );
             $accountant->syncRoles(['accountant']);
 
-            $parent = User::query()->updateOrCreate(
-                ['email' => 'parent@horizon.demo'],
+            // Registrar
+            $registrar = User::query()->updateOrCreate(
+                ['email' => 'registrar@sunrise.demo'],
                 [
-                    'name' => 'Lola Adeyemi Parent',
+                    'name' => 'Alinafe Chirwa',
                     'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100004',
                     'school_id' => $school->id,
+                    'status' => 'active',
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+            $registrar->syncRoles(['registrar']);
+
+            // Teacher
+            $teacher = User::query()->updateOrCreate(
+                ['email' => 'teacher@sunrise.demo'],
+                [
+                    'name' => 'Dalitso Nkosi',
+                    'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100005',
+                    'school_id' => $school->id,
+                    'status' => 'active',
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+            $teacher->syncRoles(['teacher']);
+
+            // Librarian
+            $librarian = User::query()->updateOrCreate(
+                ['email' => 'library@sunrise.demo'],
+                [
+                    'name' => 'Lusungu Tembo',
+                    'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100006',
+                    'school_id' => $school->id,
+                    'status' => 'active',
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+            $librarian->syncRoles(['librarian']);
+
+            // Hostel Master
+            $hostelMaster = User::query()->updateOrCreate(
+                ['email' => 'hostel@sunrise.demo'],
+                [
+                    'name' => 'Mphatso Gondwe',
+                    'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100007',
+                    'school_id' => $school->id,
+                    'status' => 'active',
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+            $hostelMaster->syncRoles(['hostel_master']);
+
+            // Transport Officer
+            $transport = User::query()->updateOrCreate(
+                ['email' => 'transport@sunrise.demo'],
+                [
+                    'name' => 'Yankho Kumwenda',
+                    'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100008',
+                    'school_id' => $school->id,
+                    'status' => 'active',
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+            $transport->syncRoles(['transport_officer']);
+
+            // Nurse
+            $nurse = User::query()->updateOrCreate(
+                ['email' => 'nurse@sunrise.demo'],
+                [
+                    'name' => 'Tionge Mvula',
+                    'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100009',
+                    'school_id' => $school->id,
+                    'status' => 'active',
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+            $nurse->syncRoles(['nurse']);
+
+            // Parent
+            $parent = User::query()->updateOrCreate(
+                ['email' => 'parent@sunrise.demo'],
+                [
+                    'name' => 'Blessings Kamanga',
+                    'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100010',
+                    'school_id' => $school->id,
+                    'status' => 'active',
                     'email_verified_at' => Carbon::now(),
                 ]
             );
             $parent->syncRoles(['parent']);
 
+            // Student User Account
             $studentUser = User::query()->updateOrCreate(
-                ['email' => 'student@horizon.demo'],
+                ['email' => 'student@sunrise.demo'],
                 [
-                    'name' => 'Temi Adeyemi Student',
+                    'name' => 'Chimwemwe Kamanga',
                     'password' => Hash::make($this->demoPassword),
+                    'phone' => '+265991100011',
                     'school_id' => $school->id,
+                    'status' => 'active',
                     'email_verified_at' => Carbon::now(),
                 ]
             );
             $studentUser->syncRoles(['student']);
 
+            // ─── 6. Class & Student Record ────────────────────────────────────
             $classGroup = ClassGroup::query()->updateOrCreate(
                 [
                     'school_id' => $school->id,
                     'academic_year_id' => $academicYear->id,
                     'grade_level_id' => $grade->id,
-                    'name' => 'Grade 10 Gold',
+                    'name' => 'Form 3 Sapphire',
                 ],
                 [
                     'campus_id' => $campus->id,
-                    'room' => 'Block B · 204',
+                    'room' => 'Block A · 101',
                     'homeroom_teacher_id' => $teacher->id,
                 ]
             );
 
             $studentRecord = Student::query()->updateOrCreate(
-                ['school_id' => $school->id, 'admission_number' => 'HGN-260001'],
+                ['school_id' => $school->id, 'admission_number' => 'SA-260001'],
                 [
                     'user_id' => $studentUser->id,
-                    'first_name' => 'Temi',
-                    'last_name' => 'Adeyemi',
+                    'first_name' => 'Chimwemwe',
+                    'last_name' => 'Kamanga',
                     'gender' => 'female',
                     'status' => 'active',
                     'date_of_birth' => Carbon::now()->subYears(15),
                     'enrollment_date' => Carbon::now()->subMonths(3),
-                    'metadata' => [
-                        'learner_support' => 'none',
-                        'clubs' => ['robotics'],
-                    ],
+                    'metadata' => ['learner_support' => 'none', 'clubs' => ['debate', 'science']],
                 ]
             );
 
             $guardian = Guardian::query()->updateOrCreate(
                 ['school_id' => $school->id, 'user_id' => $parent->id],
                 [
-                    'first_name' => 'Lola',
-                    'last_name' => 'Adeyemi',
+                    'first_name' => 'Blessings',
+                    'last_name' => 'Kamanga',
                     'relationship' => 'mother',
-                    'phone' => '+2348090009876',
-                    'email' => 'lola.adeyemi@example.com',
+                    'phone' => '+265991100010',
+                    'email' => 'blessings.kamanga@example.com',
                 ]
             );
 
             $studentRecord->guardians()->sync([
-                $guardian->id => [
-                    'relationship' => 'mother',
-                    'is_primary' => true,
-                ],
+                $guardian->id => ['relationship' => 'mother', 'is_primary' => true],
             ]);
 
             StudentEnrollment::query()->updateOrCreate(
-                [
-                    'student_id' => $studentRecord->id,
-                    'academic_year_id' => $academicYear->id,
-                ],
+                ['student_id' => $studentRecord->id, 'academic_year_id' => $academicYear->id],
                 [
                     'school_id' => $school->id,
                     'class_group_id' => $classGroup->id,
@@ -215,72 +322,85 @@ class DemoTenantSeeder extends Seeder
                 ]
             );
 
+            // ─── 7. Finance ───────────────────────────────────────────────────
             $feeStructure = FeeStructure::query()->firstOrCreate(
                 ['school_id' => $school->id, 'academic_year_id' => $academicYear->id, 'name' => 'Annual Tuition 2026'],
                 [
                     'description' => 'Includes tuition & digital learning stack',
                     'components' => [
-                        ['label' => 'Tuition', 'amount' => 425_000],
-                        ['label' => 'ICT levy', 'amount' => 35_000],
+                        ['label' => 'Tuition', 'amount' => 350_000],
+                        ['label' => 'ICT Levy', 'amount' => 25_000],
+                        ['label' => 'Development Fee', 'amount' => 15_000],
                     ],
                     'allow_installments' => true,
                 ]
             );
 
             $invoice = Invoice::query()->updateOrCreate(
-                ['school_id' => $school->id, 'invoice_number' => 'INV-260001'],
+                ['school_id' => $school->id, 'invoice_number' => 'INV-SA-260001'],
                 [
                     'student_id' => $studentRecord->id,
                     'fee_structure_id' => $feeStructure->id,
                     'currency' => 'MWK',
-                    'subtotal' => 460_000,
-                    'discount' => 25_000,
-                    'total' => 435_000,
-                    'balance_due' => 285_000,
+                    'subtotal' => 390_000,
+                    'discount' => 15_000,
+                    'total' => 375_000,
+                    'balance_due' => 225_000,
                     'status' => 'sent',
                     'due_date' => Carbon::now()->addMonth(),
                 ]
             );
 
             InvoiceLine::query()->firstOrCreate(
-                ['invoice_id' => $invoice->id, 'description' => 'Tuition & levies'],
-                [
-                    'quantity' => 1,
-                    'unit_price' => 460_000,
-                    'tax' => 0,
-                    'total' => 460_000,
-                ]
+                ['invoice_id' => $invoice->id, 'description' => 'Tuition & Levies 2026'],
+                ['quantity' => 1, 'unit_price' => 390_000, 'tax' => 0, 'total' => 390_000]
             );
 
             Payment::query()->firstOrCreate(
-                ['reference' => 'PAY-260001'],
+                ['reference' => 'PAY-SA-260001'],
                 [
                     'school_id' => $school->id,
                     'invoice_id' => $invoice->id,
                     'amount' => 150_000,
-                    'method' => 'bank_transfer',
+                    'method' => 'mobile_money',
                     'received_by' => $accountant->id,
                     'paid_at' => Carbon::now()->subWeek(),
-                    'provider_payload' => [
-                        'bank' => 'GTBank',
-                        'channel' => 'swift',
-                    ],
+                    'provider_payload' => ['provider' => 'Airtel Money', 'reference' => 'AM-887766'],
                 ]
             );
 
+            // ─── 8. Announcement ─────────────────────────────────────────────
             Announcement::query()->firstOrCreate(
-                [
-                    'school_id' => $school->id,
-                    'title' => 'Welcome to the NextGen academic cloud',
-                ],
+                ['school_id' => $school->id, 'title' => 'Welcome to Sunrise Academy NextGen Portal'],
                 [
                     'author_id' => $admin->id,
-                    'body' => 'Parents can now review attendance, finance, and communication in one secure portal.',
-                    'audience' => ['parents', 'teachers'],
+                    'body' => 'Dear parents and students, welcome to our new digital school management system. You can now view attendance, fees, and communicate with teachers — all in one place.',
+                    'audience' => ['parents', 'students', 'teachers'],
                     'delivery_channel' => 'in_app',
                     'publish_at' => Carbon::now()->subDay(),
                 ]
             );
+
         });
+
+        $this->command->info('✅ Demo tenant seeded: Sunrise Academy, Lilongwe, Malawi');
+        $this->command->newLine();
+        $this->command->table(
+            ['Role', 'Email', 'Password'],
+            [
+                ['Super Admin',       'super.admin@nextgen.mw',   $this->demoPassword],
+                ['School Director',   'director@sunrise.demo',    $this->demoPassword],
+                ['School Admin',      'admin@sunrise.demo',       $this->demoPassword],
+                ['Accountant',        'finance@sunrise.demo',     $this->demoPassword],
+                ['Registrar',         'registrar@sunrise.demo',   $this->demoPassword],
+                ['Teacher',           'teacher@sunrise.demo',     $this->demoPassword],
+                ['Librarian',         'library@sunrise.demo',     $this->demoPassword],
+                ['Hostel Master',     'hostel@sunrise.demo',      $this->demoPassword],
+                ['Transport Officer', 'transport@sunrise.demo',   $this->demoPassword],
+                ['Nurse',             'nurse@sunrise.demo',       $this->demoPassword],
+                ['Parent',            'parent@sunrise.demo',      $this->demoPassword],
+                ['Student',           'student@sunrise.demo',     $this->demoPassword],
+            ]
+        );
     }
 }

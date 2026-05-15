@@ -66,6 +66,10 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
         ->middleware('permission:audit.view')
         ->name('audit-logs.index');
 
+    Route::get('/school-setup', [\App\Http\Controllers\Web\SchoolSetupController::class, 'index'])
+        ->middleware('permission:school_setup.view')
+        ->name('school-setup.index');
+
     Route::get('/portal/parent', ParentPortalController::class)
         ->middleware('role:parent')
         ->name('portal.parent');

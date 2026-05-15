@@ -20,6 +20,16 @@ class School extends Model
         'settings',
         'logo_path',
         'is_active',
+        'address',
+        'phone',
+        'email',
+        'website',
+        'city',
+        'country',
+        'postal_address',
+        'primary_color',
+        'secondary_color',
+        'currency',
     ];
 
     protected function casts(): array

@@ -5,26 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Term extends Model
+class GradingSystem extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'school_id',
-        'academic_year_id',
         'name',
-        'position',
-        'starts_on',
-        'ends_on',
-        'is_active',
+        'type',
+        'is_default',
     ];
 
     protected function casts(): array
     {
         return [
-            'starts_on' => 'date',
-            'ends_on' => 'date',
+            'is_default' => 'boolean',
         ];
     }
 
@@ -33,8 +30,8 @@ class Term extends Model
         return $this->belongsTo(School::class);
     }
 
-    public function academicYear(): BelongsTo
+    public function scales(): HasMany
     {
-        return $this->belongsTo(AcademicYear::class);
+        return $this->hasMany(GradingScale::class);
     }
 }

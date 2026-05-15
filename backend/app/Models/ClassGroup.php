@@ -19,6 +19,8 @@ class ClassGroup extends Model
         'name',
         'room',
         'homeroom_teacher_id',
+        'level',
+        'description',
     ];
 
     public function school(): BelongsTo

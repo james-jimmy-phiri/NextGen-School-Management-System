@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageProps } from '@/types';
 import SchoolProfile from './Partials/SchoolProfile';
@@ -18,7 +18,16 @@ interface Props extends PageProps {
 }
 
 export default function SchoolSetupIndex({ school, permissions }: Props) {
+    const { url } = usePage();
     const [activeTab, setActiveTab] = useState('profile');
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [url]);
 
     const tabs = [
         { id: 'profile', label: 'School Profile', permission: permissions.can_edit_school },

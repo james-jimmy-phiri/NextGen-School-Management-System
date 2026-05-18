@@ -165,7 +165,11 @@ export default function AuthenticatedLayout({
             const next = { ...prev };
             for (const item of navItems) {
                 if (item.kind === 'branch') {
-                    if (next[item.id] === undefined) {
+                    // Auto-expand branch if it contains an active link
+                    const hasActiveChild = item.children.some((child) => child.isActive);
+                    if (hasActiveChild) {
+                        next[item.id] = true;
+                    } else if (next[item.id] === undefined) {
                         next[item.id] = false;
                     }
                 }
@@ -202,14 +206,10 @@ export default function AuthenticatedLayout({
             .toUpperCase() ?? 'NG';
 
     const toggleBranch = (id: string) => {
-        setOpenBranches((p) => {
-            const isCurrentlyOpen = !!p[id];
-            if (isCurrentlyOpen) {
-                return { ...p, [id]: false };
-            }
-            // Close all others and open this one
-            return { [id]: true };
-        });
+        setOpenBranches((p) => ({
+            ...p,
+            [id]: !p[id],
+        }));
     };
 
     const renderNavLink = (item: ResolvedNavLeaf, collapsed: boolean) => (

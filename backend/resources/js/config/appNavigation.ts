@@ -56,6 +56,7 @@ export type NavLeafConfig = {
     label: string;
     icon: LucideIcon;
     routeName?: string;
+    routeParams?: Record<string, any>;
     erpPageKey?: string;
     highlight?: boolean | ((c: NavContext) => boolean);
     visible?: (c: NavContext) => boolean;
@@ -169,14 +170,14 @@ export const defaultNavBlocks: NavBlockConfig[] = [
         icon: School,
         visible: (c) => staff(c) && c.isOperationalLead,
         children: [
-            { kind: 'leaf', label: 'School profile', icon: Building2, erpPageKey: 'school-profile' },
-            { kind: 'leaf', label: 'Academic years', icon: ClipboardList, erpPageKey: 'school-academic-years' },
-            { kind: 'leaf', label: 'Terms / semesters', icon: ClipboardList, erpPageKey: 'school-terms' },
-            { kind: 'leaf', label: 'Classes', icon: Users, erpPageKey: 'school-classes' },
-            { kind: 'leaf', label: 'Streams / sections', icon: Users, erpPageKey: 'school-streams' },
-            { kind: 'leaf', label: 'Subjects', icon: BookOpen, erpPageKey: 'school-subjects' },
-            { kind: 'leaf', label: 'Departments', icon: Building2, erpPageKey: 'school-departments' },
-            { kind: 'leaf', label: 'Grading system', icon: PieChart, erpPageKey: 'school-grading' },
+            { kind: 'leaf', label: 'School profile', icon: Building2, routeName: 'school-setup.index', routeParams: { tab: 'profile' } },
+            { kind: 'leaf', label: 'Academic years', icon: ClipboardList, routeName: 'school-setup.index', routeParams: { tab: 'academic_years' } },
+            { kind: 'leaf', label: 'Terms / semesters', icon: ClipboardList, routeName: 'school-setup.index', routeParams: { tab: 'terms' } },
+            { kind: 'leaf', label: 'Classes', icon: Users, routeName: 'school-setup.index', routeParams: { tab: 'classes' } },
+            { kind: 'leaf', label: 'Streams / sections', icon: Users, routeName: 'school-setup.index', routeParams: { tab: 'streams' } },
+            { kind: 'leaf', label: 'Subjects', icon: BookOpen, routeName: 'school-setup.index', routeParams: { tab: 'subjects' } },
+            { kind: 'leaf', label: 'Departments', icon: Building2, routeName: 'school-setup.index', routeParams: { tab: 'departments' } },
+            { kind: 'leaf', label: 'Grading system', icon: PieChart, routeName: 'school-setup.index', routeParams: { tab: 'grading' } },
         ],
     },
     {
@@ -429,7 +430,7 @@ function leafHref(leaf: NavLeafConfig): string {
             return route('erp.page', { pageKey: leaf.erpPageKey });
         }
         if (leaf.routeName) {
-            return route(leaf.routeName);
+            return route(leaf.routeName, leaf.routeParams);
         }
     } catch {
         return '#';
@@ -442,7 +443,16 @@ function leafActive(leaf: NavLeafConfig, current: string | undefined, pageUrl: s
         return erpIsActive(leaf.erpPageKey, current, pageUrl);
     }
     if (leaf.routeName) {
-        return routeIsActive(leaf.routeName, current);
+        const isActive = routeIsActive(leaf.routeName, current);
+        if (!isActive) return false;
+
+        if (leaf.routeParams) {
+            const searchParams = new URLSearchParams(pageUrl.split('?')[1] || '');
+            return Object.entries(leaf.routeParams).every(
+                ([key, value]) => searchParams.get(key) === String(value),
+            );
+        }
+        return true;
     }
     return false;
 }

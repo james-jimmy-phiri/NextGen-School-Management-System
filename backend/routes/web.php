@@ -33,7 +33,7 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
         ->where('pageKey', '[a-z0-9\-]+')
         ->name('erp.page');
 
-    Route::get('/schools', [SchoolController::class, 'index'])->name('schools.index');
+    Route::resource('schools', SchoolController::class)->except(['show']);
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 
@@ -66,9 +66,42 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
         ->middleware('permission:audit.view')
         ->name('audit-logs.index');
 
-    Route::get('/school-setup', [\App\Http\Controllers\Web\SchoolSetupController::class, 'index'])
-        ->middleware('permission:school_setup.view')
-        ->name('school-setup.index');
+    Route::middleware('permission:school_setup.view')->prefix('school-setup')->name('school-setup.')->group(function (): void {
+        Route::get('/', [\App\Http\Controllers\Web\SchoolSetupController::class, 'index'])->name('index');
+        Route::post('/school', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateSchool'])->name('school.update');
+
+        Route::post('/academic-years', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeAcademicYear'])->name('academic-years.store');
+        Route::patch('/academic-years/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateAcademicYear'])->name('academic-years.update');
+        Route::delete('/academic-years/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyAcademicYear'])->name('academic-years.destroy');
+
+        Route::post('/terms', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeTerm'])->name('terms.store');
+        Route::patch('/terms/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateTerm'])->name('terms.update');
+        Route::delete('/terms/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyTerm'])->name('terms.destroy');
+
+        Route::post('/departments', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeDepartment'])->name('departments.store');
+        Route::patch('/departments/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateDepartment'])->name('departments.update');
+        Route::delete('/departments/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyDepartment'])->name('departments.destroy');
+
+        Route::post('/grade-levels', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeGradeLevel'])->name('grade-levels.store');
+        Route::patch('/grade-levels/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateGradeLevel'])->name('grade-levels.update');
+        Route::delete('/grade-levels/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyGradeLevel'])->name('grade-levels.destroy');
+
+        Route::post('/class-groups', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeClassGroup'])->name('class-groups.store');
+        Route::patch('/class-groups/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateClassGroup'])->name('class-groups.update');
+        Route::delete('/class-groups/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyClassGroup'])->name('class-groups.destroy');
+
+        Route::post('/streams', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeStream'])->name('streams.store');
+        Route::patch('/streams/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateStream'])->name('streams.update');
+        Route::delete('/streams/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyStream'])->name('streams.destroy');
+
+        Route::post('/subjects', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeSubject'])->name('subjects.store');
+        Route::patch('/subjects/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateSubject'])->name('subjects.update');
+        Route::delete('/subjects/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroySubject'])->name('subjects.destroy');
+
+        Route::post('/grading-systems', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeGradingSystem'])->name('grading-systems.store');
+        Route::patch('/grading-systems/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateGradingSystem'])->name('grading-systems.update');
+        Route::delete('/grading-systems/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyGradingSystem'])->name('grading-systems.destroy');
+    });
 
     Route::get('/portal/parent', ParentPortalController::class)
         ->middleware('role:parent')

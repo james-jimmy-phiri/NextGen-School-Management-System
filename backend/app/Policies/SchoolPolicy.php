@@ -9,7 +9,7 @@ class SchoolPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'school_admin', 'teacher', 'accountant']);
+        return $user->hasAnyRole(['super_admin', 'school_director', 'school_admin', 'teacher', 'accountant']);
     }
 
     public function view(User $user, School $school): bool

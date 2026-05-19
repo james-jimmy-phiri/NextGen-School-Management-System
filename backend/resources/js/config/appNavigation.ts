@@ -373,12 +373,28 @@ export const defaultNavBlocks: NavBlockConfig[] = [
     },
     {
         kind: 'branch',
+        id: 'my-school',
+        label: 'My school',
+        icon: School,
+        visible: (c) =>
+            staff(c) &&
+            !c.isSuperAdmin &&
+            c.roles.some((r) =>
+                ['school_director', 'school_admin'].includes(r),
+            ),
+        children: [
+            { kind: 'leaf', label: 'School profile', icon: Building2, routeName: 'schools.index' },
+        ],
+    },
+    {
+        kind: 'branch',
         id: 'superadmin',
         label: 'Super admin',
         icon: Monitor,
         visible: (c) => staff(c) && c.isSuperAdmin,
         children: [
-            { kind: 'leaf', label: 'Schools', icon: Building2, routeName: 'schools.index' },
+            { kind: 'leaf', label: 'All schools', icon: Building2, routeName: 'schools.index' },
+            { kind: 'leaf', label: 'Add school', icon: CirclePlus, routeName: 'schools.create' },
             { kind: 'leaf', label: 'System monitoring', icon: Activity, erpPageKey: 'superadmin-monitoring' },
             { kind: 'leaf', label: 'Subscriptions', icon: Receipt, erpPageKey: 'superadmin-subscriptions' },
             { kind: 'leaf', label: 'Support tickets', icon: MessageCircle, erpPageKey: 'superadmin-support' },

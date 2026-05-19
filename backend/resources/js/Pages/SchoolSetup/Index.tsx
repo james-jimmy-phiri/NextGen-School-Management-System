@@ -11,13 +11,27 @@ import Streams from './Partials/Streams';
 import Subjects from './Partials/Subjects';
 import Departments from './Partials/Departments';
 import GradingSystem from './Partials/GradingSystem';
+import { Toaster } from 'react-hot-toast';
 
 interface Props extends PageProps {
     school: any;
     permissions: any;
+    academic_years: any[];
+    terms: any[];
+    departments: any[];
+    grade_levels: any[];
+    class_groups: any[];
+    streams: any[];
+    subjects: any[];
+    grading_systems: any[];
+    teachers_list: any[];
+    academic_years_list: any[];
+    grade_levels_list: any[];
+    class_groups_list: any[];
+    departments_list: any[];
 }
 
-export default function SchoolSetupIndex({ school, permissions }: Props) {
+export default function SchoolSetupIndex(props: Props) {
     const { url } = usePage();
     const [activeTab, setActiveTab] = useState('profile');
 
@@ -30,14 +44,14 @@ export default function SchoolSetupIndex({ school, permissions }: Props) {
     }, [url]);
 
     const tabs = [
-        { id: 'profile', label: 'School Profile', permission: permissions.can_edit_school },
-        { id: 'academic_years', label: 'Academic Years', permission: permissions.can_manage_academic_years },
-        { id: 'terms', label: 'Terms / Semesters', permission: permissions.can_manage_terms },
-        { id: 'departments', label: 'Departments', permission: permissions.can_manage_subjects },
-        { id: 'classes', label: 'Classes', permission: permissions.can_manage_classes },
-        { id: 'streams', label: 'Streams', permission: permissions.can_manage_classes },
-        { id: 'subjects', label: 'Subjects', permission: permissions.can_manage_subjects },
-        { id: 'grading', label: 'Grading System', permission: permissions.can_manage_grading },
+        { id: 'profile', label: 'School Profile', permission: props.permissions.can_edit_school },
+        { id: 'academic_years', label: 'Academic Years', permission: props.permissions.can_manage_academic_years },
+        { id: 'terms', label: 'Terms / Semesters', permission: props.permissions.can_manage_terms },
+        { id: 'departments', label: 'Departments', permission: props.permissions.can_manage_subjects },
+        { id: 'classes', label: 'Classes & Grade Levels', permission: props.permissions.can_manage_classes },
+        { id: 'streams', label: 'Streams', permission: props.permissions.can_manage_classes },
+        { id: 'subjects', label: 'Subjects', permission: props.permissions.can_manage_subjects },
+        { id: 'grading', label: 'Grading System', permission: props.permissions.can_manage_grading },
     ].filter(tab => tab.permission !== false);
 
     return (
@@ -57,6 +71,7 @@ export default function SchoolSetupIndex({ school, permissions }: Props) {
             }
         >
             <Head title="School Setup" />
+            <Toaster position="top-right" />
 
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-64 shrink-0">
@@ -87,14 +102,14 @@ export default function SchoolSetupIndex({ school, permissions }: Props) {
                             transition={{ duration: 0.2 }}
                             className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 lg:p-8"
                         >
-                            {activeTab === 'profile' && <SchoolProfile initialData={school} />}
-                            {activeTab === 'academic_years' && <AcademicYears />}
-                            {activeTab === 'terms' && <Terms />}
-                            {activeTab === 'departments' && <Departments />}
-                            {activeTab === 'classes' && <Classes />}
-                            {activeTab === 'streams' && <Streams />}
-                            {activeTab === 'subjects' && <Subjects />}
-                            {activeTab === 'grading' && <GradingSystem />}
+                            {activeTab === 'profile' && <SchoolProfile initialData={props.school} />}
+                            {activeTab === 'academic_years' && <AcademicYears years={props.academic_years} />}
+                            {activeTab === 'terms' && <Terms terms={props.terms} academicYearsList={props.academic_years_list} />}
+                            {activeTab === 'departments' && <Departments departments={props.departments} teachersList={props.teachers_list} />}
+                            {activeTab === 'classes' && <Classes classGroups={props.class_groups} gradeLevels={props.grade_levels} academicYearsList={props.academic_years_list} gradeLevelsList={props.grade_levels_list} teachersList={props.teachers_list} />}
+                            {activeTab === 'streams' && <Streams streams={props.streams} classGroupsList={props.class_groups_list} />}
+                            {activeTab === 'subjects' && <Subjects subjects={props.subjects} departmentsList={props.departments_list} teachersList={props.teachers_list} />}
+                            {activeTab === 'grading' && <GradingSystem gradingSystems={props.grading_systems} />}
                         </motion.div>
                     </AnimatePresence>
                 </div>

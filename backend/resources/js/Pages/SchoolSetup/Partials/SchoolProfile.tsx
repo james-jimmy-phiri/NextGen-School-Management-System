@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React from 'react';
+import { useForm } from '@inertiajs/react';
+import toast from 'react-hot-toast';
 
 interface SchoolProfileProps {
     initialData: any;
 }
 
 export default function SchoolProfile({ initialData }: SchoolProfileProps) {
-    const [data, setData] = useState({
+    const { data, setData, post, processing, errors } = useForm({
         name: initialData?.name || '',
         motto: initialData?.branding?.motto || '',
         address: initialData?.address || '',
@@ -18,27 +19,18 @@ export default function SchoolProfile({ initialData }: SchoolProfileProps) {
         primary_color: initialData?.primary_color || '#4f46e5',
         currency: initialData?.currency || 'USD',
     });
-    
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState({ type: '', text: '' });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setData({ ...data, [e.target.name]: e.target.value });
+        setData(e.target.name as any, e.target.value);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        setMessage({ type: '', text: '' });
-
-        try {
-            await axios.put(`/api/v1/school-setup/school-profile/${initialData.id}`, data);
-            setMessage({ type: 'success', text: 'School profile updated successfully.' });
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.message || 'An error occurred.' });
-        } finally {
-            setLoading(false);
-        }
+        post(route('school-setup.school.update'), {
+            preserveScroll: true,
+            onSuccess: () => toast.success('School profile updated successfully'),
+            onError: () => toast.error('Failed to update school profile'),
+        });
     };
 
     return (
@@ -48,21 +40,17 @@ export default function SchoolProfile({ initialData }: SchoolProfileProps) {
                 <p className="text-sm text-slate-500">Update your institution's core details and branding.</p>
             </div>
 
-            {message.text && (
-                <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                    {message.text}
-                </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">School Name</label>
                         <input type="text" name="name" value={data.name} onChange={handleChange} className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" required />
+                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Motto</label>
                         <input type="text" name="motto" value={data.motto} onChange={handleChange} className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" />
+                        {errors.motto && <p className="text-red-500 text-xs mt-1">{errors.motto}</p>}
                     </div>
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Email Address</label>
@@ -104,10 +92,10 @@ export default function SchoolProfile({ initialData }: SchoolProfileProps) {
                 <div className="flex justify-end pt-4 border-t border-slate-100">
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={processing}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-sm shadow-indigo-200 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                     >
-                        {loading ? 'Saving...' : 'Save Profile'}
+                        {processing ? 'Saving...' : 'Save Profile'}
                     </button>
                 </div>
             </form>

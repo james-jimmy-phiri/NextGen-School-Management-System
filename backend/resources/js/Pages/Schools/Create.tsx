@@ -19,11 +19,12 @@ export default function CreateSchool() {
         secondary_color: '#3b82f6',
         currency: 'USD',
         is_active: true,
+        logo: null as File | null,
     });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('schools.store'));
+        post(route('schools.store'), { forceFormData: true });
     };
 
     return (
@@ -185,6 +186,24 @@ export default function CreateSchool() {
                     <div>
                         <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-100 pb-2 mb-4">Branding & Finance</h3>
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                            <div className="sm:col-span-3">
+                                <label htmlFor="logo" className="block text-sm font-medium text-slate-700">School Logo</label>
+                                <input
+                                    id="logo"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setData('logo', e.target.files ? e.target.files[0] : null)}
+                                    className="mt-1 block w-full text-sm text-slate-500
+                                        file:mr-4 file:py-2 file:px-4
+                                        file:rounded-xl file:border-0
+                                        file:text-sm file:font-semibold
+                                        file:bg-slate-50 file:text-slate-700
+                                        hover:file:bg-slate-100
+                                    "
+                                />
+                                {errors.logo && <p className="mt-1 text-sm text-red-500">{errors.logo}</p>}
+                            </div>
+
                             <div>
                                 <label htmlFor="primary_color" className="block text-sm font-medium text-slate-700">Primary Color</label>
                                 <input

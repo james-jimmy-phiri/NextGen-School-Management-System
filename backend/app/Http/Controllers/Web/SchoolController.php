@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 
 class SchoolController extends Controller
 {
@@ -20,8 +21,18 @@ class SchoolController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
+        if (! $user->isSuperAdmin()) {
+            $school = School::with(['academicYears', 'departments'])->findOrFail($user->school_id);
+            $currentAcademicYear = $school->academicYears->where('is_current', true)->first();
+
+            return Inertia::render('Schools/Profile', [
+                'school' => $school,
+                'currentAcademicYear' => $currentAcademicYear,
+                'departments' => $school->departments,
+            ]);
+        }
+
         $schools = School::query()
-            ->when(! $user->isSuperAdmin(), fn ($query) => $query->whereKey($user->school_id))
             ->latest()
             ->paginate(15);
 
@@ -39,7 +50,13 @@ class SchoolController extends Controller
 
     public function store(StoreSchoolRequest $request): RedirectResponse
     {
-        School::create($request->validated());
+        $validated = $request->validated();
+
+        if ($request->hasFile('logo')) {
+            $validated['logo_path'] = $request->file('logo')->store('logos', 'public');
+        }
+
+        School::create($validated);
 
         return redirect()->route('schools.index')->with('success', 'School created successfully.');
     }
@@ -55,7 +72,16 @@ class SchoolController extends Controller
 
     public function update(UpdateSchoolRequest $request, School $school): RedirectResponse
     {
-        $school->update($request->validated());
+        $validated = $request->validated();
+
+        if ($request->hasFile('logo')) {
+            if ($school->logo_path) {
+                Storage::disk('public')->delete($school->logo_path);
+            }
+            $validated['logo_path'] = $request->file('logo')->store('logos', 'public');
+        }
+
+        $school->update($validated);
 
         return redirect()->route('schools.index')->with('success', 'School updated successfully.');
     }

@@ -41,6 +41,7 @@ class UpdateSchoolRequest extends FormRequest
             'secondary_color' => ['nullable', 'string', 'max:50'],
             'currency' => ['nullable', 'string', 'max:10'],
             'is_active' => ['boolean'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }
 }

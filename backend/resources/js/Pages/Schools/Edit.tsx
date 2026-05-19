@@ -20,12 +20,13 @@ type SchoolData = {
     secondary_color: string | null;
     currency: string | null;
     is_active: boolean;
+    logo_url?: string | null;
 };
 
 export default function EditSchool() {
     const { school } = usePage<PageProps<{ school: SchoolData }>>().props;
 
-    const { data, setData, patch, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         name: school.name ?? '',
         slug: school.slug ?? '',
         timezone: school.timezone ?? 'UTC',
@@ -41,11 +42,13 @@ export default function EditSchool() {
         secondary_color: school.secondary_color ?? '#3b82f6',
         currency: school.currency ?? 'USD',
         is_active: school.is_active ?? true,
+        logo: null as File | null,
+        _method: 'patch',
     });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('schools.update', school.id));
+        post(route('schools.update', school.id), { forceFormData: true });
     };
 
     return (
@@ -285,6 +288,29 @@ export default function EditSchool() {
                             Branding &amp; Finance
                         </h3>
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                            <div className="sm:col-span-3">
+                                <label htmlFor="logo" className="block text-sm font-medium text-slate-700">School Logo</label>
+                                {school.logo_url && (
+                                    <div className="mt-2 mb-3">
+                                        <img src={school.logo_url} alt="Current logo" className="h-16 w-auto rounded object-contain border border-slate-200 p-1" />
+                                    </div>
+                                )}
+                                <input
+                                    id="logo"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setData('logo', e.target.files ? e.target.files[0] : null)}
+                                    className="mt-1 block w-full text-sm text-slate-500
+                                        file:mr-4 file:py-2 file:px-4
+                                        file:rounded-xl file:border-0
+                                        file:text-sm file:font-semibold
+                                        file:bg-slate-50 file:text-slate-700
+                                        hover:file:bg-slate-100
+                                    "
+                                />
+                                {errors.logo && <p className="mt-1 text-sm text-red-500">{errors.logo}</p>}
+                            </div>
+
                             <div>
                                 <label htmlFor="primary_color" className="block text-sm font-medium text-slate-700">
                                     Primary Color

@@ -11,6 +11,8 @@ class School extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $appends = ['logo_url'];
+
     protected $fillable = [
         'name',
         'slug',
@@ -59,5 +61,15 @@ class School extends Model
     public function students(): HasMany
     {
         return $this->hasMany(Student::class);
+    }
+
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class);
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo_path ? asset('storage/' . $this->logo_path) : null;
     }
 }

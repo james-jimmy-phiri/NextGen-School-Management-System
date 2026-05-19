@@ -62,7 +62,7 @@ class SchoolSetupController extends Controller
             'grading_systems' => GradingSystem::where('school_id', $schoolId)->with('scales')->get(),
             
             // Dropdowns
-            'teachers_list' => User::role('teacher')->where('school_id', $schoolId)->select('id', 'first_name', 'last_name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->first_name . ' ' . $t->last_name]),
+            'teachers_list' => User::role('teacher')->where('school_id', $schoolId)->select('id', 'name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name]),
             'academic_years_list' => AcademicYear::where('school_id', $schoolId)->select('id', 'title', 'is_current')->get(),
             'grade_levels_list' => GradeLevel::where('school_id', $schoolId)->select('id', 'label')->get(),
             'class_groups_list' => ClassGroup::where('school_id', $schoolId)->select('id', 'name')->get(),

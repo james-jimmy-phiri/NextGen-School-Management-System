@@ -24,6 +24,14 @@ Route::get('/', function () {
     ]);
 });
 
+// Public Self-Registration for Students
+Route::get('/apply/{school:slug?}', [App\Http\Controllers\Web\StudentRegistrationController::class, 'create'])->name('apply.create');
+Route::post('/apply', [App\Http\Controllers\Web\StudentRegistrationController::class, 'store'])->name('apply.store');
+
+// Public Admissions Module
+Route::get('/admissions/apply', [App\Http\Controllers\PublicAdmissionController::class, 'create'])->name('public.admissions.create');
+Route::post('/admissions/apply', [App\Http\Controllers\PublicAdmissionController::class, 'store'])->name('public.admissions.store');
+
 Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/dashboard/analytics', static fn () => Inertia::render('Dashboard/Analytics'))->name('dashboard.analytics');
@@ -34,8 +42,17 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
         ->name('erp.page');
 
     Route::resource('schools', SchoolController::class)->except(['show']);
-    Route::get('/students', [StudentController::class, 'index'])->name('students.index');
+    Route::resource('students', StudentController::class);
+    Route::resource('guardians', \App\Http\Controllers\Web\GuardianController::class);
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+
+    // Admin Admissions Module
+    Route::get('/admissions', [\App\Http\Controllers\AdmissionController::class, 'index'])->name('admissions.index');
+    Route::get('/admissions/create', [\App\Http\Controllers\AdmissionController::class, 'create'])->name('admissions.create');
+    Route::post('/admissions', [\App\Http\Controllers\AdmissionController::class, 'store'])->name('admissions.store');
+    Route::get('/admissions/{admission}', [\App\Http\Controllers\AdmissionController::class, 'show'])->name('admissions.show');
+    Route::patch('/admissions/{admission}/status', [\App\Http\Controllers\AdmissionController::class, 'updateStatus'])->name('admissions.updateStatus');
+    Route::post('/admissions/{admission}/enroll', [\App\Http\Controllers\AdmissionController::class, 'enroll'])->name('admissions.enroll');
 
     // ─── Identity & access (users, roles, permissions — Spatie RBAC) ────────
     Route::resource('users', UserManagementController::class)->except(['show']);

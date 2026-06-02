@@ -188,10 +188,10 @@ export const defaultNavBlocks: NavBlockConfig[] = [
         visible: (c) => staff(c) && c.isOperationalLead,
         children: [
             { kind: 'leaf', label: 'Student list', icon: Users, routeName: 'students.index' },
-            { kind: 'leaf', label: 'Admissions', icon: UserPlus, erpPageKey: 'students-admissions' },
-            { kind: 'leaf', label: 'Registration', icon: UserPlus, erpPageKey: 'students-registration' },
+            { kind: 'leaf', label: 'Admissions', icon: UserPlus, routeName: 'admissions.index' },
+            { kind: 'leaf', label: 'Registration', icon: UserPlus, routeName: 'students.create' },
             { kind: 'leaf', label: 'Profiles', icon: Users, erpPageKey: 'students-profiles' },
-            { kind: 'leaf', label: 'Guardians / parents', icon: HeartHandshake, erpPageKey: 'students-guardians' },
+            { kind: 'leaf', label: 'Guardians / parents', icon: HeartHandshake, routeName: 'guardians.index' },
             { kind: 'leaf', label: 'Promotion', icon: GraduationCap, erpPageKey: 'students-promotion' },
             { kind: 'leaf', label: 'Alumni', icon: GraduationCap, erpPageKey: 'students-alumni' },
             { kind: 'leaf', label: 'Transfers', icon: Users, erpPageKey: 'students-transfers' },

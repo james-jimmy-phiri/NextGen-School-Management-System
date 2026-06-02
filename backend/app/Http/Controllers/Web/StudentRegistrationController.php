@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\Guardian;
@@ -10,41 +11,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
-class StudentController extends Controller
+class StudentRegistrationController extends Controller
 {
-    public function index(Request $request): Response
+    public function create(?School $school = null)
     {
-        $this->authorize('viewAny', Student::class);
+        // If a specific school isn't provided in the slug, find the first or default one
+        $school = $school ?? School::firstOrFail();
 
-        /** @var \App\Models\User $user */
-        $user = $request->user();
-
-        $students = Student::query()
-            ->with(['guardians', 'enrollments.classGroup'])
-            ->when(! $user->isSuperAdmin(), fn ($query) => $query->where('school_id', $user->school_id))
-            ->latest()
-            ->paginate(15);
-
-        return Inertia::render('Students/Index', [
-            'students' => $students,
+        return Inertia::render('Public/Apply', [
+            'school' => $school,
         ]);
-    }
-
-    public function create()
-    {
-        $this->authorize('create', Student::class);
-
-        return Inertia::render('Students/Create');
     }
 
     public function store(Request $request)
     {
-        $this->authorize('create', Student::class);
-
         $validated = $request->validate([
             'school_id' => ['required', 'exists:schools,id'],
             'student_first_name' => ['required', 'string', 'max:255'],
@@ -71,6 +54,7 @@ class StudentController extends Controller
             $studentUser->assignRole('student');
 
             // 2. Create Student Profile
+            // Assuming admission_number is auto-generated or handled elsewhere. Here we generate a simple one.
             $admissionNumber = 'STU-' . date('Y') . '-' . str_pad(random_int(1, 9999), 4, '0', STR_PAD_LEFT);
             $student = Student::create([
                 'school_id' => $validated['school_id'],
@@ -99,7 +83,8 @@ class StudentController extends Controller
                 ]);
                 $parentUser->assignRole('parent');
                 
-                // TODO: Dispatch Email Job to send credentials
+                // TODO: Dispatch Email Job to send credentials to $validated['parent_email']
+                // Mail::to($parentUser->email)->send(new ParentWelcomeMail($parentUser, $parentPassword));
             }
 
             // 4. Create Guardian Profile
@@ -121,54 +106,6 @@ class StudentController extends Controller
             ]);
         });
 
-        return redirect()->route('students.index')->with('success', 'Student registered successfully.');
-    }
-
-    public function show(Student $student)
-    {
-        $this->authorize('view', $student);
-
-        $student->load(['guardians', 'enrollments.classGroup', 'enrollments.academicYear']);
-
-        return Inertia::render('Students/Show', [
-            'student' => $student,
-        ]);
-    }
-
-    public function edit(Student $student)
-    {
-        $this->authorize('update', $student);
-
-        $student->load(['guardians']);
-
-        return Inertia::render('Students/Edit', [
-            'student' => $student,
-        ]);
-    }
-
-    public function update(Request $request, Student $student)
-    {
-        $this->authorize('update', $student);
-
-        $validated = $request->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'gender' => ['required', Rule::in(['male', 'female', 'other'])],
-            'date_of_birth' => ['required', 'date'],
-            'status' => ['required', Rule::in(['active', 'inactive', 'graduated', 'suspended'])],
-        ]);
-
-        $student->update($validated);
-
-        return redirect()->route('students.show', $student)->with('success', 'Student updated successfully.');
-    }
-
-    public function destroy(Student $student)
-    {
-        $this->authorize('delete', $student);
-
-        $student->delete();
-
-        return redirect()->route('students.index')->with('success', 'Student archived successfully.');
+        return redirect()->route('login')->with('success', 'Application submitted successfully. We have sent the portal credentials to the parent email.');
     }
 }

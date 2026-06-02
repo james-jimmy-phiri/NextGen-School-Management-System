@@ -20,16 +20,27 @@ class Student extends Model
     protected $fillable = [
         'school_id',
         'user_id',
+        'registration_number',
         'admission_number',
+        'national_id_passport',
         'first_name',
+        'middle_name',
         'last_name',
         'gender',
         'date_of_birth',
+        'place_of_birth',
+        'nationality',
+        'marital_status',
+        'religion',
         'medical_notes',
         'enrollment_date',
         'status',
         'photo_path',
         'metadata',
+        'consent_policies',
+        'consent_privacy',
+        'digital_signature',
+        'signature_date',
     ];
 
     protected function casts(): array
@@ -37,6 +48,9 @@ class Student extends Model
         return [
             'date_of_birth' => 'date',
             'enrollment_date' => 'date',
+            'signature_date' => 'date',
+            'consent_policies' => 'boolean',
+            'consent_privacy' => 'boolean',
             'metadata' => 'array',
         ];
     }
@@ -49,6 +63,36 @@ class Student extends Model
     public function portalUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function address()
+    {
+        return $this->hasOne(StudentAddress::class);
+    }
+
+    public function sponsor()
+    {
+        return $this->hasOne(Sponsor::class);
+    }
+
+    public function medicalRecord()
+    {
+        return $this->hasOne(MedicalRecord::class);
+    }
+
+    public function emergencyContacts()
+    {
+        return $this->hasMany(EmergencyContact::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(StudentDocument::class);
+    }
+
+    public function subjects(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'student_subjects')->withPivot('academic_year_id')->withTimestamps();
     }
 
     public function guardians(): BelongsToMany

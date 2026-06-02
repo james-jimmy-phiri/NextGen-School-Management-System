@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
+import PublicLayout from '@/Layouts/PublicLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import InputLabel from '@/Components/InputLabel';
@@ -123,9 +124,18 @@ export default function Create({ school, flash }: PageProps<{ school: any, flash
                     <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Successful</h2>
                     <p className="text-gray-600 mb-6">{flash.success}</p>
-                    <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-200 inline-block">
-                        <span className="block text-sm uppercase tracking-wide font-semibold mb-1">Your Reference Number</span>
-                        <span className="text-2xl font-mono font-bold tracking-widest">{flash.reference_number}</span>
+                    <div className="bg-emerald-50 text-emerald-800 p-6 rounded-2xl border border-emerald-200 inline-block mb-8">
+                        <span className="block text-sm uppercase tracking-wide font-semibold mb-2">Your Reference Number</span>
+                        <span className="text-3xl font-mono font-bold tracking-widest">{flash.reference_number}</span>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <PrimaryButton type="button" onClick={() => window.location.href = route('public.admissions.track', { reference: flash.reference_number })}>
+                            Track Application Status
+                        </PrimaryButton>
+                        <SecondaryButton type="button" onClick={() => window.location.reload()}>
+                            Submit Another Application
+                        </SecondaryButton>
                     </div>
                 </div>
             </GuestLayout>

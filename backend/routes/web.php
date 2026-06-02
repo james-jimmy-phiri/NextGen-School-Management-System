@@ -31,6 +31,7 @@ Route::post('/apply', [App\Http\Controllers\Web\StudentRegistrationController::c
 // Public Admissions Module
 Route::get('/admissions/apply', [App\Http\Controllers\PublicAdmissionController::class, 'create'])->name('public.admissions.create');
 Route::post('/admissions/apply', [App\Http\Controllers\PublicAdmissionController::class, 'store'])->name('public.admissions.store');
+Route::get('/admissions/track', [App\Http\Controllers\PublicAdmissionController::class, 'track'])->name('public.admissions.track');
 
 Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -119,6 +120,25 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
         Route::patch('/grading-systems/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateGradingSystem'])->name('grading-systems.update');
         Route::delete('/grading-systems/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'destroyGradingSystem'])->name('grading-systems.destroy');
     });
+
+    // --- Academics Module ---
+    Route::prefix('academics')->name('academics.')->group(function (): void {
+        // Subjects — read-only listing & operational management (create/edit/delete is in School Setup)
+        Route::get('/subjects', [\App\Http\Controllers\Web\AcademicsController::class, 'subjectsIndex'])->name('subjects.index');
+        Route::get('/subjects/{id}', [\App\Http\Controllers\Web\AcademicsController::class, 'subjectManage'])->name('subjects.manage');
+
+        // Classes — read-only listing & operational management (create/edit/delete is in School Setup)
+        Route::get('/classes', [\App\Http\Controllers\Web\AcademicsController::class, 'classesIndex'])->name('classes.index');
+        Route::get('/classes/{id}', [\App\Http\Controllers\Web\AcademicsController::class, 'classManage'])->name('classes.manage');
+
+        // Operational: assign subjects to a class, assign teachers, manage student enrolments
+        Route::post('/classes/{id}/subjects', [\App\Http\Controllers\Web\AcademicsController::class, 'assignSubjectsToClass'])->name('classes.subjects.assign');
+        Route::post('/classes/{classId}/teachers', [\App\Http\Controllers\Web\AcademicsController::class, 'assignTeacherToSubject'])->name('classes.teachers.assign');
+        Route::delete('/allocations/{id}', [\App\Http\Controllers\Web\AcademicsController::class, 'removeTeacherAssignment'])->name('allocations.destroy');
+        Route::post('/students/{studentId}/subjects', [\App\Http\Controllers\Web\AcademicsController::class, 'enrollStudentSubject'])->name('students.subjects.enroll');
+        Route::delete('/students/{studentId}/subjects/{subjectId}', [\App\Http\Controllers\Web\AcademicsController::class, 'dropStudentSubject'])->name('students.subjects.drop');
+    });
+
 
     Route::get('/portal/parent', ParentPortalController::class)
         ->middleware('role:parent')

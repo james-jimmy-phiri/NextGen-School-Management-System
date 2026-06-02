@@ -49,6 +49,8 @@ class RolePermissionSeeder extends Seeder
         'assessments.view',
         'assessments.manage',
         'reports.generate',
+        'academics.classes.manage',
+        'academics.subjects.manage',
 
         // ── Finance ───────────────────────────────────────────────────────────
         'finance.view',
@@ -108,6 +110,8 @@ class RolePermissionSeeder extends Seeder
             'assessments.view',
             'assessments.manage',
             'reports.generate',
+            'academics.classes.manage',
+            'academics.subjects.manage',
             'finance.view',
             'finance.manage',
             'invoices.manage',
@@ -142,6 +146,8 @@ class RolePermissionSeeder extends Seeder
             'assessments.view',
             'assessments.manage',
             'reports.generate',
+            'academics.classes.manage',
+            'academics.subjects.manage',
             'finance.view',
             'finance.manage',
             'invoices.manage',

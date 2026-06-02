@@ -61,11 +61,12 @@ return new class extends Migration
             $table->foreignId('academic_year_id')->constrained()->cascadeOnDelete();
             $table->foreignId('subject_id')->constrained()->cascadeOnDelete();
             $table->foreignId('class_group_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('stream_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('teacher_id')->references('id')->on('users')->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(
-                ['academic_year_id', 'subject_id', 'teacher_id', 'class_group_id'],
+                ['academic_year_id', 'subject_id', 'teacher_id', 'class_group_id', 'stream_id'],
                 'teacher_subject_alloc_unique'
             );
         });

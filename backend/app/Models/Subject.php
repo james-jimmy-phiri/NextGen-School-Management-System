@@ -34,4 +34,14 @@ class Subject extends Model
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
+
+    public function classGroups(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(ClassGroup::class)->withPivot('is_core')->withTimestamps();
+    }
+
+    public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Student::class, 'student_subjects')->withPivot('academic_year_id')->withTimestamps();
+    }
 }

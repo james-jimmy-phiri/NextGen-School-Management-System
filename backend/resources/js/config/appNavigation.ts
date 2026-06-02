@@ -204,8 +204,8 @@ export const defaultNavBlocks: NavBlockConfig[] = [
         icon: BookOpen,
         visible: (c) => staff(c) && c.isOperationalLead,
         children: [
-            { kind: 'leaf', label: 'Subjects', icon: BookOpen, erpPageKey: 'academics-subjects' },
-            { kind: 'leaf', label: 'Classes', icon: Users, erpPageKey: 'academics-classes' },
+            { kind: 'leaf', label: 'Subjects', icon: BookOpen, routeName: 'academics.subjects.index' },
+            { kind: 'leaf', label: 'Classes', icon: Users, routeName: 'academics.classes.index' },
             { kind: 'leaf', label: 'Streams', icon: Users, erpPageKey: 'academics-streams' },
             { kind: 'leaf', label: 'Timetable', icon: ClipboardList, erpPageKey: 'academics-timetable' },
             { kind: 'leaf', label: 'Assignments', icon: ClipboardList, erpPageKey: 'academics-assignments' },

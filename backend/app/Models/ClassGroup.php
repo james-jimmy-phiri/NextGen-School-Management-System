@@ -57,4 +57,9 @@ class ClassGroup extends Model
     {
         return $this->hasMany(StudentEnrollment::class);
     }
+
+    public function subjects(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class)->withPivot('is_core')->withTimestamps();
+    }
 }

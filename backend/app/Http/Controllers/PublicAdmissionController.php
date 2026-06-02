@@ -104,4 +104,25 @@ class PublicAdmissionController extends Controller
             'reference_number' => $referenceNumber
         ]);
     }
+
+    public function track(Request $request)
+    {
+        $reference = $request->query('reference');
+        $admission = null;
+        $error = null;
+
+        if ($reference) {
+            $admission = Admission::where('reference_number', $reference)->first();
+            
+            if (!$admission) {
+                $error = 'No application found with that reference number.';
+            }
+        }
+
+        return Inertia::render('Public/Admissions/Track', [
+            'admission' => $admission,
+            'referenceQuery' => $reference,
+            'error' => $error
+        ]);
+    }
 }

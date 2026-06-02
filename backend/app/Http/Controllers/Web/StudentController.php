@@ -47,77 +47,223 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'school_id' => ['required', 'exists:schools,id'],
-            'student_first_name' => ['required', 'string', 'max:255'],
-            'student_last_name' => ['required', 'string', 'max:255'],
+            'admission_number' => ['required', 'string', 'max:50'],
+            'national_id_passport' => ['nullable', 'string', 'max:100'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'gender' => ['required', Rule::in(['male', 'female', 'other'])],
             'date_of_birth' => ['required', 'date'],
-            'parent_first_name' => ['required', 'string', 'max:255'],
-            'parent_last_name' => ['required', 'string', 'max:255'],
-            'parent_email' => ['required', 'email', 'max:255'],
-            'parent_phone' => ['required', 'string', 'max:255'],
-            'relationship' => ['required', 'string', 'max:255'],
+            'place_of_birth' => ['nullable', 'string', 'max:255'],
+            'nationality' => ['required', 'string', 'max:100'],
+            'marital_status' => ['nullable', 'string', 'max:50'],
+            'religion' => ['nullable', 'string', 'max:100'],
+            
+            // Address
+            'phone_number' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'house_number' => ['nullable', 'string', 'max:50'],
+            'street_name' => ['nullable', 'string', 'max:255'],
+            'area_village' => ['required', 'string', 'max:255'],
+            'traditional_authority' => ['nullable', 'string', 'max:255'],
+            'district' => ['required', 'string', 'max:255'],
+            'city_town' => ['required', 'string', 'max:255'],
+            'postal_address' => ['nullable', 'string', 'max:255'],
+            'country' => ['required', 'string', 'max:100'],
+
+            // Academics
+            'academic_year_id' => ['required', 'exists:academic_years,id'],
+            'class_group_id' => ['required', 'exists:class_groups,id'],
+            'campus_id' => ['required', 'exists:campuses,id'],
+            'mode_of_study' => ['required', 'string'],
+            'year_of_study' => ['required', 'integer', 'min:1'],
+            'term_id' => ['required', 'exists:terms,id'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after:start_date'],
+
+            // Guardians
+            'guardians' => ['required', 'array', 'min:1'],
+            'guardians.*.full_name' => ['required', 'string', 'max:255'],
+            'guardians.*.relationship' => ['required', 'string', 'max:100'],
+            'guardians.*.gender' => ['nullable', 'string'],
+            'guardians.*.national_id' => ['nullable', 'string'],
+            'guardians.*.occupation' => ['nullable', 'string'],
+            'guardians.*.employer' => ['nullable', 'string'],
+            'guardians.*.phone' => ['required', 'string'],
+            'guardians.*.alternative_phone' => ['nullable', 'string'],
+            'guardians.*.email' => ['nullable', 'email'],
+            'guardians.*.address' => ['nullable', 'string'],
+            'guardians.*.is_primary' => ['boolean'],
+
+            // Sponsor
+            'sponsorship_type' => ['required', 'string'],
+            'sponsor_name' => ['nullable', 'string'],
+            'sponsor_contact_person' => ['nullable', 'string'],
+            'sponsor_phone' => ['nullable', 'string'],
+            'sponsor_email' => ['nullable', 'email'],
+            'sponsor_address' => ['nullable', 'string'],
+
+            // Medical
+            'health_status' => ['nullable', 'string'],
+            'blood_group' => ['nullable', 'string'],
+            'has_disability' => ['required', 'boolean'],
+            'disability_type' => ['nullable', 'string'],
+            'chronic_conditions' => ['nullable', 'string'],
+            'allergies' => ['nullable', 'string'],
+            'medications' => ['nullable', 'string'],
+            'special_needs' => ['nullable', 'string'],
+
+            // Emergency
+            'emergency_full_name' => ['required', 'string'],
+            'emergency_relationship' => ['required', 'string'],
+            'emergency_phone' => ['required', 'string'],
+            'emergency_alternative_phone' => ['nullable', 'string'],
+            'emergency_email' => ['nullable', 'email'],
+            'emergency_address' => ['nullable', 'string'],
+
+            // Consent
+            'consent_policies' => ['required', 'boolean', 'accepted'],
+            'consent_privacy' => ['required', 'boolean', 'accepted'],
+            'digital_signature' => ['required', 'string'],
         ]);
 
-        DB::transaction(function () use ($validated) {
-            // 1. Create Student User account
-            $studentPassword = Str::random(8); // Default password
-            $studentUser = User::create([
-                'school_id' => $validated['school_id'],
-                'name' => $validated['student_first_name'] . ' ' . $validated['student_last_name'],
-                'email' => strtolower($validated['student_first_name'] . '.' . $validated['student_last_name'] . random_int(100, 999) . '@student.local'), // Generate unique student email or use placeholder
-                'password' => Hash::make($studentPassword),
-                'status' => 'active',
-            ]);
-            $studentUser->assignRole('student');
+        DB::transaction(function () use ($validated, $request) {
+            // Generate Registration Number
+            $registrationNumber = 'COURSE-' . random_int(100, 999) . '-' . date('Y');
 
-            // 2. Create Student Profile
-            $admissionNumber = 'STU-' . date('Y') . '-' . str_pad(random_int(1, 9999), 4, '0', STR_PAD_LEFT);
-            $student = Student::create([
-                'school_id' => $validated['school_id'],
-                'user_id' => $studentUser->id,
-                'admission_number' => $admissionNumber,
-                'first_name' => $validated['student_first_name'],
-                'last_name' => $validated['student_last_name'],
-                'gender' => $validated['gender'],
-                'date_of_birth' => $validated['date_of_birth'],
-                'enrollment_date' => now(),
-                'status' => 'active',
-            ]);
-
-            // 3. Create Parent User account (or find existing by email)
-            $parentUser = User::where('email', $validated['parent_email'])->first();
-            $parentPassword = null;
-            if (!$parentUser) {
-                $parentPassword = Str::random(8);
-                $parentUser = User::create([
+            $studentUser = null;
+            if ($request->filled('username') && $request->filled('password')) {
+                $studentUser = User::create([
                     'school_id' => $validated['school_id'],
-                    'name' => $validated['parent_first_name'] . ' ' . $validated['parent_last_name'],
-                    'email' => $validated['parent_email'],
-                    'phone' => $validated['parent_phone'],
-                    'password' => Hash::make($parentPassword),
+                    'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                    'email' => $validated['email'] ?? strtolower($validated['first_name'] . '.' . $validated['last_name'] . random_int(100, 999) . '@student.local'),
+                    'username' => $request->username,
+                    'password' => Hash::make($request->password),
+                    'security_question' => $request->security_question,
+                    'security_answer' => $request->security_answer,
                     'status' => 'active',
                 ]);
-                $parentUser->assignRole('parent');
-                
-                // TODO: Dispatch Email Job to send credentials
+                $studentUser->assignRole('student');
             }
 
-            // 4. Create Guardian Profile
-            $guardian = Guardian::firstOrCreate(
-                ['user_id' => $parentUser->id],
-                [
-                    'school_id' => $validated['school_id'],
-                    'first_name' => $validated['parent_first_name'],
-                    'last_name' => $validated['parent_last_name'],
-                    'email' => $validated['parent_email'],
-                    'phone' => $validated['parent_phone'],
-                ]
-            );
+            $student = Student::create([
+                'school_id' => $validated['school_id'],
+                'user_id' => $studentUser ? $studentUser->id : null,
+                'registration_number' => $registrationNumber,
+                'admission_number' => $validated['admission_number'],
+                'national_id_passport' => $validated['national_id_passport'],
+                'first_name' => $validated['first_name'],
+                'middle_name' => $validated['middle_name'],
+                'last_name' => $validated['last_name'],
+                'gender' => $validated['gender'],
+                'date_of_birth' => $validated['date_of_birth'],
+                'place_of_birth' => $validated['place_of_birth'],
+                'nationality' => $validated['nationality'],
+                'marital_status' => $validated['marital_status'],
+                'religion' => $validated['religion'],
+                'enrollment_date' => now(),
+                'status' => 'active',
+                'consent_policies' => $validated['consent_policies'],
+                'consent_privacy' => $validated['consent_privacy'],
+                'digital_signature' => $validated['digital_signature'],
+                'signature_date' => now(),
+            ]);
 
-            // 5. Link Student and Guardian
-            $student->guardians()->attach($guardian->id, [
-                'relationship' => $validated['relationship'],
-                'is_primary' => true,
+            $student->address()->create([
+                'phone_number' => $validated['phone_number'],
+                'email' => $validated['email'],
+                'house_number' => $validated['house_number'],
+                'street_name' => $validated['street_name'],
+                'area_village' => $validated['area_village'],
+                'traditional_authority' => $validated['traditional_authority'],
+                'district' => $validated['district'],
+                'city_town' => $validated['city_town'],
+                'postal_address' => $validated['postal_address'],
+                'country' => $validated['country'],
+            ]);
+
+            $student->enrollments()->create([
+                'school_id' => $validated['school_id'],
+                'academic_year_id' => $validated['academic_year_id'],
+                'class_group_id' => $validated['class_group_id'],
+                'campus_id' => $validated['campus_id'],
+                'mode_of_study' => $validated['mode_of_study'],
+                'year_of_study' => $validated['year_of_study'],
+                'term_id' => $validated['term_id'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'status' => 'enrolled',
+            ]);
+
+            foreach ($validated['guardians'] as $guardianData) {
+                $guardianUser = null;
+                if (!empty($guardianData['email'])) {
+                    $guardianUser = User::where('email', $guardianData['email'])->first();
+                    if (!$guardianUser) {
+                        $guardianUser = User::create([
+                            'school_id' => $validated['school_id'],
+                            'name' => $guardianData['full_name'],
+                            'email' => $guardianData['email'],
+                            'phone' => $guardianData['phone'],
+                            'password' => Hash::make(Str::random(8)),
+                            'status' => 'active',
+                        ]);
+                        $guardianUser->assignRole('parent');
+                    }
+                }
+
+                $names = explode(' ', $guardianData['full_name'], 2);
+                $firstName = $names[0];
+                $lastName = $names[1] ?? '';
+
+                $guardian = Guardian::create([
+                    'user_id' => $guardianUser ? $guardianUser->id : null,
+                    'school_id' => $validated['school_id'],
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'phone' => $guardianData['phone'],
+                    'email' => $guardianData['email'] ?? null,
+                    'gender' => $guardianData['gender'] ?? null,
+                    'national_id' => $guardianData['national_id'] ?? null,
+                    'occupation' => $guardianData['occupation'] ?? null,
+                    'employer' => $guardianData['employer'] ?? null,
+                    'alternative_phone' => $guardianData['alternative_phone'] ?? null,
+                    'address' => $guardianData['address'] ?? null,
+                ]);
+
+                $student->guardians()->attach($guardian->id, [
+                    'relationship' => $guardianData['relationship'],
+                    'is_primary' => $guardianData['is_primary'] ?? false,
+                ]);
+            }
+
+            $student->sponsor()->create([
+                'sponsorship_type' => $validated['sponsorship_type'],
+                'sponsor_name' => $validated['sponsor_name'],
+                'contact_person' => $validated['sponsor_contact_person'],
+                'phone_number' => $validated['sponsor_phone'],
+                'email' => $validated['sponsor_email'],
+                'address' => $validated['sponsor_address'],
+            ]);
+
+            $student->medicalRecord()->create([
+                'health_status' => $validated['health_status'],
+                'blood_group' => $validated['blood_group'],
+                'has_disability' => $validated['has_disability'],
+                'disability_type' => $validated['disability_type'],
+                'chronic_conditions' => $validated['chronic_conditions'],
+                'allergies' => $validated['allergies'],
+                'medications' => $validated['medications'],
+                'special_needs' => $validated['special_needs'],
+            ]);
+
+            $student->emergencyContacts()->create([
+                'full_name' => $validated['emergency_full_name'],
+                'relationship' => $validated['emergency_relationship'],
+                'phone_number' => $validated['emergency_phone'],
+                'alternative_phone' => $validated['emergency_alternative_phone'],
+                'email' => $validated['emergency_email'],
+                'address' => $validated['emergency_address'],
             ]);
         });
 

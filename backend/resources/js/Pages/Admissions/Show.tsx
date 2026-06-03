@@ -12,7 +12,7 @@ export default function Show({ admission, flash }: PageProps<{ admission: any, f
 
     const updateStatus = (newStatus: string) => {
         if (confirm(`Are you sure you want to mark this application as ${newStatus.replace('_', ' ')}?`)) {
-            router.put(route('admissions.updateStatus', admission.id), { status: newStatus });
+            router.patch(route('admissions.updateStatus', admission.id), { status: newStatus });
         }
     };
 

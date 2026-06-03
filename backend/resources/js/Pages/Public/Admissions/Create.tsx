@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
-import PublicLayout from '@/Layouts/PublicLayout';
+import SchoolPublicLayout, { type SchoolBrandingProps } from '@/Layouts/SchoolPublicLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import InputLabel from '@/Components/InputLabel';
@@ -12,6 +11,7 @@ import { AlertCircle, CheckCircle2, ChevronRight, FileUp, Save } from 'lucide-re
 import { cn } from '@/lib/utils';
 
 interface AdmissionFormData {
+    school_id: number;
     student_first_name: string;
     student_middle_name: string;
     student_last_name: string;
@@ -41,13 +41,13 @@ interface AdmissionFormData {
     passport_photo: File | null;
 }
 
-const DRAFT_KEY = 'admission_form_draft';
-
-export default function Create({ school, flash }: PageProps<{ school: any, flash: any }>) {
+export default function Create({ school, flash }: PageProps<{ school: SchoolBrandingProps; flash: any }>) {
+    const draftKey = `admission_draft_${school.slug ?? school.id ?? 'default'}`;
     const [step, setStep] = useState(1);
     const [draftSaved, setDraftSaved] = useState(false);
 
-    const { data, setData, post, processing, errors, recentlySuccessful } = useForm<AdmissionFormData>({
+    const { data, setData, post, processing, errors } = useForm<AdmissionFormData>({
+        school_id: school.id!,
         student_first_name: '',
         student_middle_name: '',
         student_last_name: '',
@@ -79,7 +79,7 @@ export default function Create({ school, flash }: PageProps<{ school: any, flash
 
     // Load draft on mount
     useEffect(() => {
-        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        const savedDraft = localStorage.getItem(draftKey);
         if (savedDraft) {
             try {
                 const parsed = JSON.parse(savedDraft);
@@ -96,7 +96,7 @@ export default function Create({ school, flash }: PageProps<{ school: any, flash
     useEffect(() => {
         const timer = setTimeout(() => {
             const { birth_certificate, school_reports, transfer_letter, passport_photo, ...textData } = data;
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(textData));
+            localStorage.setItem(draftKey, JSON.stringify(textData));
             setDraftSaved(true);
             setTimeout(() => setDraftSaved(false), 2000);
         }, 1000);
@@ -108,7 +108,7 @@ export default function Create({ school, flash }: PageProps<{ school: any, flash
         e.preventDefault();
         post(route('public.admissions.store'), {
             onSuccess: () => {
-                localStorage.removeItem(DRAFT_KEY);
+                localStorage.removeItem(draftKey);
             }
         });
     };
@@ -118,41 +118,46 @@ export default function Create({ school, flash }: PageProps<{ school: any, flash
 
     if (flash?.success) {
         return (
-            <GuestLayout>
+            <SchoolPublicLayout school={school} title="Application received" subtitle={flash.success as string}>
                 <Head title="Application Submitted" />
-                <div className="py-12 text-center">
-                    <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Successful</h2>
-                    <p className="text-gray-600 mb-6">{flash.success}</p>
-                    <div className="bg-emerald-50 text-emerald-800 p-6 rounded-2xl border border-emerald-200 inline-block mb-8">
-                        <span className="block text-sm uppercase tracking-wide font-semibold mb-2">Your Reference Number</span>
-                        <span className="text-3xl font-mono font-bold tracking-widest">{flash.reference_number}</span>
+                <div className="rounded-2xl border border-emerald-200 bg-white p-8 text-center shadow-sm">
+                    <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500 mb-4" />
+                    <div className="mb-8 inline-block rounded-2xl border border-emerald-200 bg-emerald-50 px-8 py-6 text-emerald-900">
+                        <span className="block text-xs font-semibold uppercase tracking-wider mb-2">Your reference number</span>
+                        <span className="text-2xl font-mono font-bold tracking-widest sm:text-3xl">
+                            {flash.reference_number}
+                        </span>
                     </div>
-                    
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <PrimaryButton type="button" onClick={() => window.location.href = route('public.admissions.track', { reference: flash.reference_number })}>
-                            Track Application Status
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <PrimaryButton
+                            type="button"
+                            onClick={() =>
+                                (window.location.href = route('public.admissions.track', {
+                                    reference: flash.reference_number,
+                                }))
+                            }
+                        >
+                            Track application
                         </PrimaryButton>
                         <SecondaryButton type="button" onClick={() => window.location.reload()}>
-                            Submit Another Application
+                            Submit another
                         </SecondaryButton>
                     </div>
                 </div>
-            </GuestLayout>
+            </SchoolPublicLayout>
         );
     }
 
     return (
-        <GuestLayout>
+        <SchoolPublicLayout
+            school={school}
+            wide
+            title="Student application"
+            subtitle={`Apply to ${school.name} for the upcoming academic year.`}
+        >
             <Head title="Student Admission Application" />
 
-            <div className="max-w-3xl mx-auto py-8">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Student Application</h1>
-                    <p className="text-gray-500 mt-2">Join {school?.name || 'our school'} for the upcoming academic year.</p>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                     {/* Stepper Header */}
                     <div className="bg-gray-50 border-b border-gray-100 px-6 py-4">
                         <div className="flex items-center justify-between">
@@ -372,7 +377,6 @@ export default function Create({ school, flash }: PageProps<{ school: any, flash
                         </div>
                     </form>
                 </div>
-            </div>
-        </GuestLayout>
+        </SchoolPublicLayout>
     );
 }

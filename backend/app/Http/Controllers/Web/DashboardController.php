@@ -10,8 +10,12 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request): Response|\Illuminate\Http\RedirectResponse
     {
+        if ($request->user()->hasRole('parent')) {
+            return redirect()->route('portal.parent');
+        }
+
         $stats = app(TenantDashboardService::class)->forUser($request->user());
 
         return Inertia::render('Dashboard', [

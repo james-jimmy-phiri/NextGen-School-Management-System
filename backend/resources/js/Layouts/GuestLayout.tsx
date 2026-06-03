@@ -1,54 +1,52 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
 import { Link } from '@inertiajs/react';
 import { PropsWithChildren } from 'react';
 import { motion } from 'framer-motion';
+import { GraduationCap } from 'lucide-react';
 
-export default function Guest({ children }: PropsWithChildren) {
+export default function GuestLayout({ children }: PropsWithChildren) {
     return (
-        <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-950 py-12 sm:px-6 lg:px-8">
-            {/* Background elements */}
+        <div className="relative flex min-h-screen flex-col bg-slate-50">
             <div
-                aria-hidden="true"
-                className="absolute inset-0 -top-40 flex justify-center overflow-hidden pointer-events-none"
-            >
-                <div className="h-[600px] w-[900px] rounded-full bg-indigo-600/20 blur-[120px]" />
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-br from-blue-600/10 via-sky-500/5 to-transparent"
+            />
+
+            <header className="relative z-10 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
+                <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-4 sm:px-6">
+                    <Link href="/" className="flex items-center gap-2.5">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-700 to-sky-500 text-white shadow-md">
+                            <GraduationCap className="h-5 w-5" />
+                        </span>
+                        <div>
+                            <p className="text-sm font-bold text-slate-900">NextGen Schools</p>
+                            <p className="text-[10px] uppercase tracking-wider text-slate-500">Secure sign in</p>
+                        </div>
+                    </Link>
+                    <Link
+                        href={route('public.admissions.create')}
+                        className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+                    >
+                        Apply for admission
+                    </Link>
+                </div>
+            </header>
+
+            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35 }}
+                    className="w-full max-w-md"
+                >
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-lg shadow-slate-200/50 sm:px-8">
+                        {children}
+                    </div>
+                </motion.div>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative z-10 flex flex-col items-center"
-            >
-                <Link href="/" className="group flex items-center gap-3">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-sky-400 text-lg font-bold text-white shadow-lg shadow-indigo-500/40 transition-transform group-hover:scale-105">
-                        NG
-                    </span>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-white">
-                            NextGen Schools
-                        </h1>
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-white/50">
-                            Authentication
-                        </p>
-                    </div>
-                </Link>
-            </motion.div>
-
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="relative z-10 mt-10 w-full sm:max-w-md"
-            >
-                <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-8 py-10 shadow-2xl backdrop-blur-xl sm:px-10">
-                    {children}
-                </div>
-            </motion.div>
-            
-            <p className="relative z-10 mt-10 text-center text-xs text-slate-500">
-                &copy; {new Date().getFullYear()} NextGen School Management System. All rights reserved.
-            </p>
+            <footer className="relative z-10 py-6 text-center text-xs text-slate-400">
+                &copy; {new Date().getFullYear()} NextGen School Management System
+            </footer>
         </div>
     );
 }

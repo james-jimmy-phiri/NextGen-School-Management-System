@@ -18,12 +18,11 @@ class StudentRegistrationController extends Controller
 {
     public function create(?School $school = null)
     {
-        // If a specific school isn't provided in the slug, find the first or default one
-        $school = $school ?? School::firstOrFail();
+        if ($school) {
+            return redirect()->route('public.admissions.create', ['school' => $school->slug]);
+        }
 
-        return Inertia::render('Public/Apply', [
-            'school' => $school,
-        ]);
+        return redirect()->route('public.admissions.create');
     }
 
     public function store(Request $request)

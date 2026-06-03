@@ -4,25 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Models\Admission;
 use App\Models\School;
+use App\Support\SchoolBranding;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class PublicAdmissionController extends Controller
 {
-    public function create(Request $request)
+    protected function resolveSchool(?School $school = null): School
     {
-        // Assuming there is a default school or fetching by domain/slug
-        $school = School::first(); 
+        if ($school) {
+            return $school;
+        }
+
+        return School::query()->where('is_active', true)->orderBy('id')->firstOrFail();
+    }
+
+    public function create(Request $request, ?School $school = null)
+    {
+        $school = $this->resolveSchool($school);
 
         return Inertia::render('Public/Admissions/Create', [
-            'school' => $school,
+            'school' => SchoolBranding::forSchool($school),
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'school_id' => 'required|exists:schools,id',
             'student_first_name' => 'required|string|max:255',
             'student_middle_name' => 'nullable|string|max:255',
             'student_last_name' => 'required|string|max:255',
@@ -32,13 +42,13 @@ class PublicAdmissionController extends Controller
             'nationality' => 'nullable|string|max:255',
             'religion' => 'nullable|string|max:255',
             'birth_certificate_number' => 'nullable|string|max:255',
-            
+
             'previous_school_name' => 'nullable|string|max:255',
             'previous_grade' => 'nullable|string|max:255',
             'transfer_reason' => 'nullable|string|max:255',
-            
+
             'boarding_type' => 'required|string|in:day,boarding',
-            
+
             'parent_name' => 'required|string|max:255',
             'parent_relationship' => 'required|string|max:255',
             'parent_phone' => 'required|string|max:255',
@@ -46,7 +56,6 @@ class PublicAdmissionController extends Controller
             'parent_occupation' => 'nullable|string|max:255',
             'parent_address' => 'required|string',
 
-            // Files
             'birth_certificate' => 'nullable|file|mimes:pdf,jpg,png|max:5120',
             'school_reports' => 'nullable|file|mimes:pdf,jpg,png|max:5120',
             'transfer_letter' => 'nullable|file|mimes:pdf,jpg,png|max:5120',
@@ -54,27 +63,17 @@ class PublicAdmissionController extends Controller
         ]);
 
         $documents = [];
-        
-        $filesToUpload = ['birth_certificate', 'school_reports', 'transfer_letter', 'passport_photo'];
-        foreach ($filesToUpload as $fileKey) {
+
+        foreach (['birth_certificate', 'school_reports', 'transfer_letter', 'passport_photo'] as $fileKey) {
             if ($request->hasFile($fileKey)) {
-                $path = $request->file($fileKey)->store('admissions', 'public');
-                $documents[$fileKey] = $path;
+                $documents[$fileKey] = $request->file($fileKey)->store('admissions', 'public');
             }
         }
 
-        // Generate a unique reference number
-        $referenceNumber = 'APP-' . date('Y') . '-' . strtoupper(Str::random(6));
-        
-        // Ensure uniqueness
-        while (Admission::where('reference_number', $referenceNumber)->exists()) {
-            $referenceNumber = 'APP-' . date('Y') . '-' . strtoupper(Str::random(6));
-        }
+        $referenceNumber = $this->generateReferenceNumber();
 
-        $school = School::first(); // Or resolve from request
-
-        $admission = Admission::create([
-            'school_id' => $school->id,
+        Admission::create([
+            'school_id' => $validated['school_id'],
             'reference_number' => $referenceNumber,
             'student_first_name' => $validated['student_first_name'],
             'student_middle_name' => $validated['student_middle_name'] ?? null,
@@ -100,29 +99,40 @@ class PublicAdmissionController extends Controller
         ]);
 
         return redirect()->back()->with('flash', [
-            'success' => 'Application submitted successfully. Your reference number is ' . $referenceNumber,
-            'reference_number' => $referenceNumber
+            'success' => 'Application submitted successfully. Please save your reference number.',
+            'reference_number' => $referenceNumber,
         ]);
     }
 
-    public function track(Request $request)
+    public function track(Request $request, ?School $school = null)
     {
+        $school = $school ? $this->resolveSchool($school) : null;
         $reference = $request->query('reference');
         $admission = null;
         $error = null;
 
         if ($reference) {
             $admission = Admission::where('reference_number', $reference)->first();
-            
-            if (!$admission) {
+
+            if (! $admission) {
                 $error = 'No application found with that reference number.';
             }
         }
 
         return Inertia::render('Public/Admissions/Track', [
+            'school' => SchoolBranding::forSchool($school ?? School::query()->where('is_active', true)->orderBy('id')->first()),
             'admission' => $admission,
             'referenceQuery' => $reference,
-            'error' => $error
+            'error' => $error,
         ]);
+    }
+
+    protected function generateReferenceNumber(): string
+    {
+        do {
+            $referenceNumber = 'APP-' . date('Y') . '-' . strtoupper(Str::random(6));
+        } while (Admission::where('reference_number', $referenceNumber)->exists());
+
+        return $referenceNumber;
     }
 }

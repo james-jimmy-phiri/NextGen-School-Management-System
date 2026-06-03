@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
-import PublicLayout from '@/Layouts/PublicLayout';
+import SchoolPublicLayout, { type SchoolBrandingProps } from '@/Layouts/SchoolPublicLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -8,7 +8,12 @@ import InputError from '@/Components/InputError';
 import { PageProps } from '@/types';
 import { Search, AlertCircle, FileText, CheckCircle2, XCircle, Clock } from 'lucide-react';
 
-export default function Track({ admission, referenceQuery, error }: PageProps<{ admission: any, referenceQuery: string, error: string }>) {
+export default function Track({
+    school,
+    admission,
+    referenceQuery,
+    error,
+}: PageProps<{ school: SchoolBrandingProps; admission: any; referenceQuery: string; error: string }>) {
     const [reference, setReference] = useState(referenceQuery || '');
 
     const submit = (e: React.FormEvent) => {
@@ -80,17 +85,19 @@ export default function Track({ admission, referenceQuery, error }: PageProps<{ 
 
     const statusInfo = admission ? getStatusInfo(admission.status) : null;
 
+    const applyHref = school.slug
+        ? route('public.admissions.create', { school: school.slug })
+        : route('public.admissions.create');
+
     return (
-        <PublicLayout>
+        <SchoolPublicLayout
+            school={school}
+            title="Track your application"
+            subtitle="Enter the reference number from your confirmation email or receipt."
+        >
             <Head title="Track Application Status" />
 
-            <div className="max-w-xl mx-auto py-12">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Track Application</h1>
-                    <p className="text-gray-500 mt-2">Enter your reference number to check the status of your admission application.</p>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden p-6 sm:p-8">
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-6 sm:p-8">
                     <form onSubmit={submit} className="flex flex-col gap-4">
                         <div>
                             <InputLabel htmlFor="reference" value="Reference Number" />
@@ -153,11 +160,10 @@ export default function Track({ admission, referenceQuery, error }: PageProps<{ 
                 </div>
 
                 <div className="mt-6 text-center">
-                    <Link href={route('public.admissions.create')} className="text-sm font-medium text-primary hover:underline">
+                    <Link href={applyHref} className="text-sm font-medium hover:underline" style={{ color: school.primary_color }}>
                         Apply for a new admission
                     </Link>
                 </div>
-            </div>
-        </PublicLayout>
+        </SchoolPublicLayout>
     );
 }

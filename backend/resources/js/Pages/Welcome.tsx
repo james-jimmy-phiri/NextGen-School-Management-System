@@ -50,7 +50,8 @@ const stats = [
 
 export default function Welcome({
     auth,
-}: PageProps<{ laravelVersion: string; phpVersion: string }>) {
+    schools = [],
+}: PageProps<{ laravelVersion: string; phpVersion: string; schools?: { id: number; name: string; slug: string; city?: string; country?: string }[] }>) {
     return (
         <>
             <Head title="NextGen School Management System" />
@@ -145,16 +146,16 @@ export default function Welcome({
                                 ) : (
                                     <>
                                         <Link
-                                            href={route('register')}
+                                            href={route('public.admissions.create')}
                                             className="rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-8 py-4 text-base font-semibold text-white shadow-2xl shadow-indigo-500/30 transition hover:from-indigo-500 hover:to-sky-400"
                                         >
-                                            Start free trial →
+                                            Apply for admission →
                                         </Link>
                                         <Link
                                             href={route('login')}
                                             className="rounded-2xl border border-white/20 bg-white/5 px-8 py-4 text-base font-semibold text-white transition hover:bg-white/10"
                                         >
-                                            Sign in to your school
+                                            Parent / staff sign in
                                         </Link>
                                     </>
                                 )}
@@ -222,6 +223,44 @@ export default function Welcome({
                         </div>
                     </div>
                 </section>
+
+                {schools.length > 0 && (
+                    <section className="border-t border-white/10 py-20">
+                        <div className="mx-auto max-w-4xl px-6 text-center">
+                            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
+                                Apply online
+                            </p>
+                            <h2 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
+                                Start your child&apos;s application
+                            </h2>
+                            <p className="mx-auto mt-3 max-w-lg text-sm text-white/50">
+                                Select your school to open the branded admissions form, or track an existing application.
+                            </p>
+                            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+                                {schools.map((s) => (
+                                    <Link
+                                        key={s.id}
+                                        href={route('public.admissions.create', { school: s.slug })}
+                                        className="rounded-xl border border-white/15 bg-white/5 px-6 py-4 text-left transition hover:border-indigo-400/50 hover:bg-indigo-500/10"
+                                    >
+                                        <span className="block font-semibold text-white">{s.name}</span>
+                                        {(s.city || s.country) && (
+                                            <span className="mt-1 block text-xs text-white/40">
+                                                {[s.city, s.country].filter(Boolean).join(', ')}
+                                            </span>
+                                        )}
+                                    </Link>
+                                ))}
+                            </div>
+                            <Link
+                                href={route('public.admissions.track')}
+                                className="mt-6 inline-block text-sm font-medium text-indigo-300 hover:text-indigo-200"
+                            >
+                                Track application status →
+                            </Link>
+                        </div>
+                    </section>
+                )}
 
                 {/* ── CTA ── */}
                 <section className="pb-24">

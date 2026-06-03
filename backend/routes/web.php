@@ -5,7 +5,6 @@ use App\Http\Controllers\Web\AttendanceController;
 use App\Http\Controllers\Web\AuditLogController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ErpPlaceholderController;
-use App\Http\Controllers\Web\ParentPortalController;
 use App\Http\Controllers\Web\PermissionController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\SchoolController;
@@ -21,15 +20,19 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'schools' => \App\Models\School::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'city', 'country']),
     ]);
 });
 
-// Public Self-Registration for Students
+// Legacy apply URL → school admissions wizard
 Route::get('/apply/{school:slug?}', [App\Http\Controllers\Web\StudentRegistrationController::class, 'create'])->name('apply.create');
 Route::post('/apply', [App\Http\Controllers\Web\StudentRegistrationController::class, 'store'])->name('apply.store');
 
-// Public Admissions Module
-Route::get('/admissions/apply', [App\Http\Controllers\PublicAdmissionController::class, 'create'])->name('public.admissions.create');
+// Public Admissions Module (school-branded)
+Route::get('/admissions/apply/{school:slug?}', [App\Http\Controllers\PublicAdmissionController::class, 'create'])->name('public.admissions.create');
 Route::post('/admissions/apply', [App\Http\Controllers\PublicAdmissionController::class, 'store'])->name('public.admissions.store');
 Route::get('/admissions/track', [App\Http\Controllers\PublicAdmissionController::class, 'track'])->name('public.admissions.track');
 
@@ -54,6 +57,11 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
     Route::get('/admissions/{admission}', [\App\Http\Controllers\AdmissionController::class, 'show'])->name('admissions.show');
     Route::patch('/admissions/{admission}/status', [\App\Http\Controllers\AdmissionController::class, 'updateStatus'])->name('admissions.updateStatus');
     Route::post('/admissions/{admission}/enroll', [\App\Http\Controllers\AdmissionController::class, 'enroll'])->name('admissions.enroll');
+
+    // Portal Administrative Modules
+    Route::resource('timetables', \App\Http\Controllers\Web\TimetableController::class)->except(['show', 'create', 'edit']);
+    Route::resource('clinic-visits', \App\Http\Controllers\Web\ClinicVisitController::class)->except(['show', 'create', 'edit']);
+    Route::resource('student-awards', \App\Http\Controllers\Web\StudentAwardController::class)->except(['show', 'create', 'edit']);
 
     // ─── Identity & access (users, roles, permissions — Spatie RBAC) ────────
     Route::resource('users', UserManagementController::class)->except(['show']);
@@ -140,9 +148,28 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
     });
 
 
-    Route::get('/portal/parent', ParentPortalController::class)
-        ->middleware('role:parent')
-        ->name('portal.parent');
+    // --- Parent Portal ---
+    Route::middleware('role:parent')->prefix('portal')->name('portal.')->group(function () {
+        Route::get('/parent', \App\Http\Controllers\Web\ParentDashboardController::class)->name('parent');
+        
+        // Children Routes
+        Route::get('/children/{student}', [\App\Http\Controllers\Web\Portal\PortalChildController::class, 'show'])->name('children.show');
+        Route::get('/children/{student}/attendance', [\App\Http\Controllers\Web\Portal\PortalAttendanceController::class, 'show'])->name('children.attendance');
+        Route::get('/children/{student}/academics', [\App\Http\Controllers\Web\Portal\PortalAcademicsController::class, 'show'])->name('children.academics');
+        Route::get('/children/{student}/fees', [\App\Http\Controllers\Web\Portal\PortalFinanceController::class, 'show'])->name('children.fees');
+        Route::get('/children/{student}/behaviour', [\App\Http\Controllers\Web\Portal\PortalBehaviourController::class, 'show'])->name('children.behaviour');
+        Route::get('/children/{student}/health', [\App\Http\Controllers\Web\Portal\PortalHealthController::class, 'show'])->name('children.health');
+        Route::get('/children/{student}/timetable', [\App\Http\Controllers\Web\Portal\PortalTimetableController::class, 'show'])->name('children.timetable');
+        Route::get('/children/{student}/documents', [\App\Http\Controllers\Web\Portal\PortalDocumentsController::class, 'show'])->name('children.documents');
+
+        // Global Portal Routes
+        Route::get('/messages', [\App\Http\Controllers\Web\Portal\PortalMessagesController::class, 'index'])->name('messages');
+        Route::post('/messages', [\App\Http\Controllers\Web\Portal\PortalMessagesController::class, 'store'])->name('messages.store');
+        Route::get('/announcements', [\App\Http\Controllers\Web\Portal\PortalAnnouncementsController::class, 'index'])->name('announcements');
+        Route::get('/calendar', [\App\Http\Controllers\Web\Portal\PortalCalendarController::class, 'index'])->name('calendar');
+        Route::get('/profile', [\App\Http\Controllers\Web\Portal\PortalProfileController::class, 'show'])->name('profile');
+        Route::patch('/profile', [\App\Http\Controllers\Web\Portal\PortalProfileController::class, 'update'])->name('profile.update');
+    });
 });
 
 Route::middleware('auth')->group(function (): void {

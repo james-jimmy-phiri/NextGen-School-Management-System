@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicYear;
+use App\Models\Campus;
+use App\Models\ClassGroup;
 use App\Models\Student;
+use App\Models\Term;
 use App\Models\User;
 use App\Models\Guardian;
 use Illuminate\Http\Request;
@@ -34,11 +38,21 @@ class StudentController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $this->authorize('create', Student::class);
 
-        return Inertia::render('Students/Create');
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        $schoolId = $user->school_id;
+
+        return Inertia::render('Students/Create', [
+            'schoolId' => $schoolId,
+            'campuses' => Campus::query()->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))->orderBy('name')->get(['id', 'name']),
+            'academicYears' => AcademicYear::query()->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))->orderByDesc('starts_on')->get(['id', 'title', 'is_current']),
+            'terms' => Term::query()->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))->orderBy('name')->get(['id', 'name']),
+            'classGroups' => ClassGroup::query()->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))->orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     public function store(Request $request)

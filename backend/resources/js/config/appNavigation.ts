@@ -6,13 +6,16 @@ import {
     Bell,
     BookOpen,
     Building2,
+    Calendar,
     CirclePlus,
+    Clock,
     ClipboardCheck,
     ClipboardList,
     Cog,
     Database,
     FileBarChart,
     FileSearch,
+    FileText,
     FolderOpen,
     GraduationCap,
     HeartHandshake,
@@ -36,6 +39,7 @@ import {
     UserPlus,
     Users,
     Wallet,
+    Award,
 } from 'lucide-react';
 
 export type NavContext = {
@@ -207,7 +211,7 @@ export const defaultNavBlocks: NavBlockConfig[] = [
             { kind: 'leaf', label: 'Subjects', icon: BookOpen, routeName: 'academics.subjects.index' },
             { kind: 'leaf', label: 'Classes', icon: Users, routeName: 'academics.classes.index' },
             { kind: 'leaf', label: 'Streams', icon: Users, erpPageKey: 'academics-streams' },
-            { kind: 'leaf', label: 'Timetable', icon: ClipboardList, erpPageKey: 'academics-timetable' },
+            { kind: 'leaf', label: 'Timetable', icon: ClipboardList, routeName: 'timetables.index' },
             { kind: 'leaf', label: 'Assignments', icon: ClipboardList, erpPageKey: 'academics-assignments' },
             { kind: 'leaf', label: 'Exams', icon: FileBarChart, erpPageKey: 'academics-exams' },
             { kind: 'leaf', label: 'Marks entry', icon: PieChart, erpPageKey: 'academics-marks' },
@@ -318,6 +322,7 @@ export const defaultNavBlocks: NavBlockConfig[] = [
             { kind: 'leaf', label: 'Incident reports', icon: AlertTriangle, erpPageKey: 'discipline-incidents' },
             { kind: 'leaf', label: 'Punishments', icon: Shield, erpPageKey: 'discipline-punishments' },
             { kind: 'leaf', label: 'Behavior tracking', icon: Activity, erpPageKey: 'discipline-behavior' },
+            { kind: 'leaf', label: 'Student awards', icon: Award, routeName: 'student-awards.index' },
         ],
     },
     {
@@ -328,7 +333,7 @@ export const defaultNavBlocks: NavBlockConfig[] = [
         visible: (c) => staff(c) && c.isOperationalLead,
         children: [
             { kind: 'leaf', label: 'Medical records', icon: Stethoscope, erpPageKey: 'health-records' },
-            { kind: 'leaf', label: 'Clinic visits', icon: HeartPulse, erpPageKey: 'health-visits' },
+            { kind: 'leaf', label: 'Clinic visits', icon: HeartPulse, routeName: 'clinic-visits.index' },
             { kind: 'leaf', label: 'Emergency contacts', icon: Bell, erpPageKey: 'health-emergency' },
         ],
     },
@@ -408,9 +413,19 @@ export const defaultNavBlocks: NavBlockConfig[] = [
         visible: (c) => c.isParent,
         children: [
             { kind: 'leaf', label: 'My children', icon: Users, routeName: 'portal.parent' },
+            { kind: 'leaf', label: 'Child Profile', icon: UserPlus, routeName: 'portal.children.show', visible: () => false }, // Hidden from nav, used for matching
+            { kind: 'leaf', label: 'Attendance', icon: Clock, routeName: 'portal.children.attendance', visible: () => false },
+            { kind: 'leaf', label: 'Academics', icon: BookOpen, routeName: 'portal.children.academics', visible: () => false },
+            { kind: 'leaf', label: 'Finances', icon: Wallet, routeName: 'portal.children.fees', visible: () => false },
+            { kind: 'leaf', label: 'Behaviour', icon: Activity, routeName: 'portal.children.behaviour', visible: () => false },
+            { kind: 'leaf', label: 'Health', icon: HeartPulse, routeName: 'portal.children.health', visible: () => false },
+            { kind: 'leaf', label: 'Documents', icon: FileText, routeName: 'portal.children.documents', visible: () => false },
+            { kind: 'leaf', label: 'Timetable', icon: Calendar, routeName: 'portal.children.timetable', visible: () => false },
             { kind: 'leaf', label: 'Fee statements', icon: Wallet, erpPageKey: 'portal-fee-statements' },
-            { kind: 'leaf', label: 'Academic reports', icon: FileBarChart, erpPageKey: 'portal-academic-reports' },
-            { kind: 'leaf', label: 'Messages', icon: MessageCircle, erpPageKey: 'portal-messages' },
+            { kind: 'leaf', label: 'Messages', icon: MessageCircle, routeName: 'portal.messages' },
+            { kind: 'leaf', label: 'Announcements', icon: Megaphone, routeName: 'portal.announcements' },
+            { kind: 'leaf', label: 'Calendar', icon: Calendar, routeName: 'portal.calendar' },
+            { kind: 'leaf', label: 'Profile', icon: Settings2, routeName: 'portal.profile', visible: () => false },
         ],
     },
 ];

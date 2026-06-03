@@ -1,96 +1,158 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { PageProps } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import PortalLayout from '@/Layouts/PortalLayout';
 import { motion } from 'framer-motion';
+import { GraduationCap, Users, BookOpen, Clock, Wallet, ShieldAlert, Award, Calendar, ChevronRight } from 'lucide-react';
+import type { PageProps } from '@/types';
+import StatCard from '@/Components/Portal/StatCard';
+import { format } from 'date-fns';
 
-type PortalStudent = {
-    id: number;
-    admission_number: string;
-    first_name: string;
-    last_name: string;
-    school?: {
-        name?: string;
-        branding?: Record<string, string> | null;
-    };
-    enrollments?: {
-        status?: string;
-        class_group?: { name?: string };
-        academic_year?: { title?: string };
-    }[];
-};
-
-export default function ParentDashboard() {
-    const { students } = usePage<PageProps<{ students: PortalStudent[] }>>().props;
-
+export default function Dashboard({ auth, students, announcements, events }: PageProps<{ students: any[], announcements: any[], events: any[] }>) {
     return (
-        <AuthenticatedLayout
+        <PortalLayout
             header={
-                <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Guardian cockpit</p>
-                    <h2 className="text-3xl font-semibold text-slate-900">Household learner lens</h2>
-                    <p className="mt-3 text-sm text-slate-500">
-                        Mirrors the Flutter guardian experience — attendance heatmaps, fee transparency, transcripts, messaging, and push-ready notification subscriptions.
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                        Welcome back, {auth.user?.name?.split(' ')[0] ?? 'Parent'}
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Here's what's happening with your children's education today.
                     </p>
                 </div>
             }
         >
-            <Head title="Parent workspace" />
+            <Head title="Parent Dashboard" />
 
-            <div className="grid gap-6 md:grid-cols-2">
-                {students.length === 0 ? (
-                    <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 p-8 text-center text-sm text-slate-500 md:col-span-2">
-                        No linked learners yet — ensure your guardian profile is attached to admissions.
+            <div className="flex flex-col gap-8">
+                {/* Children Overview */}
+                <section>
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-foreground">My Children</h2>
                     </div>
-                ) : (
-                    students.map((student, index) => (
-                        <motion.article
-                            key={student.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-lg"
-                        >
-                            <header className="flex items-start justify-between gap-6">
-                                <div>
-                                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                                        Household roster
-                                    </p>
-                                    <h3 className="mt-2 text-2xl font-semibold text-slate-900">
-                                        {student.first_name} {student.last_name}
-                                    </h3>
-                                    <p className="text-sm text-slate-500">{student.school?.name}</p>
-                                </div>
-                                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
-                                    {student.admission_number}
-                                </span>
-                            </header>
+                    
+                    {students.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-12 text-center">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <Users className="h-6 w-6" />
+                            </div>
+                            <h3 className="mt-4 text-sm font-semibold text-foreground">No Children Linked</h3>
+                            <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+                                Please contact the school administration to link your profile to your children's records.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                            {students.map((student, idx) => (
+                                <motion.div
+                                    key={student.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
+                                >
+                                    <div className="flex items-center gap-4 border-b border-border p-5">
+                                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">
+                                            {student.photo_path ? (
+                                                <img src={`/storage/${student.photo_path}`} alt={student.first_name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <span className="text-xl font-bold uppercase">{student.first_name[0]}{student.last_name[0]}</span>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-1 flex-col">
+                                            <h3 className="text-lg font-bold text-foreground">{student.first_name} {student.last_name}</h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                {student.enrollments?.[0]?.class_group?.name || 'Class Unassigned'} · {student.school?.name}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-px bg-border/50">
+                                        <div className="bg-card p-4">
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Attendance</p>
+                                            <p className="mt-1 font-semibold text-emerald-600 dark:text-emerald-400">{student.attendance_summary?.percentage}%</p>
+                                        </div>
+                                        <div className="bg-card p-4">
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Average</p>
+                                            <p className="mt-1 font-semibold text-blue-600 dark:text-blue-400">{student.academic_summary?.latest_average}%</p>
+                                        </div>
+                                        <div className="bg-card p-4">
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5" /> Fees Due</p>
+                                            <p className="mt-1 font-semibold text-red-600 dark:text-red-400">MWK {Number(student.finance_summary?.balance_due).toLocaleString()}</p>
+                                        </div>
+                                        <div className="bg-card p-4">
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Award className="w-3.5 h-3.5" /> Behaviour</p>
+                                            <p className="mt-1 font-semibold text-violet-600 dark:text-violet-400">{student.behaviour_summary?.points} / 100</p>
+                                        </div>
+                                    </div>
 
-                            <dl className="mt-6 grid gap-4 text-sm">
-                                <div>
-                                    <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Enrollment posture</dt>
-                                    <dd className="font-semibold text-slate-900">{student.enrollments?.[0]?.status ?? 'Pending'}</dd>
-                                    <dd className="text-xs text-slate-600">
-                                        {student.enrollments?.[0]?.class_group?.name} ·{' '}
-                                        {student.enrollments?.[0]?.academic_year?.title}
-                                    </dd>
-                                </div>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Attendance spotlight</p>
-                                        <p className="mt-3 text-xl font-semibold text-slate-900">Rolling 30-day</p>
-                                        <p className="text-xs text-slate-600">Consumes sanitized APIs shared with Flutter parent shell.</p>
+                                    <div className="bg-muted/30 p-3">
+                                        <Link
+                                            href={route('portal.children.show', student.id)}
+                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm ring-1 ring-inset ring-border transition-all hover:bg-muted"
+                                        >
+                                            View Full Profile
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Link>
                                     </div>
-                                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Fees & arrears</p>
-                                        <p className="mt-3 text-xl font-semibold text-slate-900">Wallet aware</p>
-                                        <p className="text-xs text-slate-600">Balances reference ledger views prepared for installments & MoMo payouts.</p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                    {/* Announcements */}
+                    <section className="flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-foreground">Announcements</h2>
+                            <Link href={route('portal.announcements')} className="text-sm font-medium text-primary hover:underline">View All</Link>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            {announcements.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No recent announcements.</p>
+                            ) : (
+                                announcements.map((announcement) => (
+                                    <div key={announcement.id} className="flex gap-4 border-b border-border pb-4 last:border-0 last:pb-0">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                                            <ShieldAlert className="h-5 w-5" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <h4 className="text-sm font-semibold text-foreground">{announcement.title}</h4>
+                                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{announcement.body}</p>
+                                            <span className="mt-2 text-xs text-muted-foreground">{format(new Date(announcement.publish_at), 'MMM d, yyyy')}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </dl>
-                        </motion.article>
-                    ))
-                )}
+                                ))
+                            )}
+                        </div>
+                    </section>
+
+                    {/* Upcoming Events */}
+                    <section className="flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-foreground">Upcoming Events</h2>
+                            <Link href={route('portal.calendar')} className="text-sm font-medium text-primary hover:underline">Full Calendar</Link>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            {events.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No upcoming events.</p>
+                            ) : (
+                                events.map((event) => (
+                                    <div key={event.id} className="flex items-center gap-4 rounded-xl border border-border p-3 transition-colors hover:bg-muted/50">
+                                        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                            <span className="text-[10px] font-bold uppercase">{format(new Date(event.start_date), 'MMM')}</span>
+                                            <span className="text-lg font-bold leading-none">{format(new Date(event.start_date), 'd')}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <h4 className="text-sm font-semibold text-foreground">{event.title}</h4>
+                                            {event.is_holiday && <span className="mt-0.5 w-fit rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Holiday</span>}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </section>
+                </div>
             </div>
-        </AuthenticatedLayout>
+        </PortalLayout>
     );
 }

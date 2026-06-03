@@ -31,7 +31,12 @@ export type PageProps<
         status?: string | null;
         success?: string | null;
         error?: string | null;
+        reference_number?: string | null;
     };
+    portal?: {
+        children: { id: number; first_name: string; last_name: string; photo_path?: string | null }[];
+        activeStudentId: number | null;
+    } | null;
 };
 
 export interface PaginationLink {

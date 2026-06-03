@@ -1,11 +1,18 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { FileText, Search, Plus, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function Index({ admissions }: PageProps<{ admissions: any[] }>) {
+export default function Index({ admissions, filters }: PageProps<{ admissions: any; filters?: { search?: string; status?: string } }>) {
+    const rows = admissions.data ?? admissions;
+    const [search, setSearch] = React.useState(filters?.search ?? '');
+    const [status, setStatus] = React.useState(filters?.status ?? '');
+
+    const applyFilters = () => {
+        router.get(route('admissions.index'), { search, status }, { preserveState: true, replace: true });
+    };
     const getStatusBadge = (status: string) => {
         const styles: Record<string, string> = {
             submitted: 'bg-blue-100 text-blue-800',
@@ -44,13 +51,33 @@ export default function Index({ admissions }: PageProps<{ admissions: any[] }>) 
                             <input
                                 type="text"
                                 placeholder="Search by name, reference..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                                 className="w-full pl-9 pr-4 py-2 rounded-xl border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm"
                             />
                         </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <button className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm">
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className="rounded-xl border-gray-300 text-sm shadow-sm"
+                            >
+                                <option value="">All statuses</option>
+                                <option value="submitted">Submitted</option>
+                                <option value="under_review">Under review</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="waitlisted">Waitlisted</option>
+                                <option value="enrolled">Enrolled</option>
+                            </select>
+                            <button
+                                type="button"
+                                onClick={applyFilters}
+                                className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm"
+                            >
                                 <Filter className="w-4 h-4" />
-                                Filter
+                                Apply
                             </button>
                         </div>
                     </div>
@@ -68,7 +95,7 @@ export default function Index({ admissions }: PageProps<{ admissions: any[] }>) 
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {admissions.map((admission) => (
+                                {rows.map((admission: any) => (
                                     <tr key={admission.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 font-mono font-medium text-gray-900">
                                             {admission.reference_number}

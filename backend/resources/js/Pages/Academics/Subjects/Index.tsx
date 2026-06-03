@@ -1,13 +1,7 @@
-import React, { useState } from 'react';
-import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
+import React from 'react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import Modal from '@/Components/Modal';
-import PrimaryButton from '@/Components/PrimaryButton';
-import SecondaryButton from '@/Components/SecondaryButton';
-import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
-import InputError from '@/Components/InputError';
-import { BookOpen, Users, GraduationCap, Plus, Edit, Trash2 } from 'lucide-react';
+import { BookOpen, Users, GraduationCap, ArrowRight, Settings, School, ChevronRight } from 'lucide-react';
 
 interface Subject {
     id: number;
@@ -18,196 +12,164 @@ interface Subject {
     students_count: number;
 }
 
+const subjectColors = [
+    { bg: 'bg-indigo-50', badge: 'bg-indigo-100 text-indigo-700', dot: 'bg-indigo-500', icon: 'text-indigo-500' },
+    { bg: 'bg-emerald-50', badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', icon: 'text-emerald-500' },
+    { bg: 'bg-amber-50',   badge: 'bg-amber-100 text-amber-700',   dot: 'bg-amber-500',   icon: 'text-amber-500' },
+    { bg: 'bg-rose-50',    badge: 'bg-rose-100 text-rose-700',    dot: 'bg-rose-500',    icon: 'text-rose-500' },
+    { bg: 'bg-sky-50',     badge: 'bg-sky-100 text-sky-700',     dot: 'bg-sky-500',     icon: 'text-sky-500' },
+    { bg: 'bg-purple-50',  badge: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500',  icon: 'text-purple-500' },
+];
+
 export default function Index({ subjects }: { subjects: Subject[] }) {
-    const user = usePage().props.auth.user;
-    const canManageSubjects = user?.permissions?.includes('academics.subjects.manage');
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-
-    const { data, setData, post, patch, processing, errors, reset, clearErrors } = useForm({
-        name: '',
-        code: '',
-        gpa_weight: '1.0',
-    });
-
-    const openCreateModal = () => {
-        setEditingSubject(null);
-        reset();
-        clearErrors();
-        setIsModalOpen(true);
-    };
-
-    const openEditModal = (subject: Subject) => {
-        setEditingSubject(subject);
-        setData({
-            name: subject.name,
-            code: subject.code,
-            gpa_weight: subject.gpa_weight.toString(),
-        });
-        clearErrors();
-        setIsModalOpen(true);
-    };
-
-    const deleteSubject = (id: number) => {
-        if (confirm('Are you sure you want to delete this subject? This action cannot be undone.')) {
-            router.delete(route('academics.subjects.destroy', id));
-        }
-    };
-
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (editingSubject) {
-            patch(route('academics.subjects.update', editingSubject.id), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        } else {
-            post(route('academics.subjects.store'), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        }
-    };
+    const user = (usePage().props.auth as any).user;
+    const canManageSchoolSetup = user?.permissions?.includes('school.manage') ||
+        user?.permissions?.includes('settings.manage');
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Academic Subjects</h2>}
+            header={
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-semibold leading-tight text-gray-800">Academic Subjects</h2>
+                        <p className="text-sm text-gray-500 mt-0.5">View subject assignments across classes and manage teacher allocations</p>
+                    </div>
+                    {canManageSchoolSetup && (
+                        <Link
+                            href={route('school-setup.index')}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                        >
+                            <Settings className="w-4 h-4" />
+                            Add / Edit Subjects in School Setup
+                            <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    )}
+                </div>
+            }
         >
             <Head title="Academic Subjects" />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-800">All Subjects</h3>
-                                <p className="text-sm text-gray-500">View and manage subject assignments across classes and teachers</p>
-                            </div>
-                            {canManageSubjects && (
-                                <PrimaryButton onClick={openCreateModal}>
-                                    <Plus className="w-4 h-4 mr-2" /> Create Subject
-                                </PrimaryButton>
-                            )}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {subjects.map((subject) => (
-                                <div key={subject.id} className="relative block p-5 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all group">
-                                    {canManageSubjects && (
-                                        <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => openEditModal(subject)} className="p-1.5 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 transition-colors">
-                                                <Edit className="w-4 h-4" />
-                                            </button>
-                                            <button onClick={() => deleteSubject(subject.id)} className="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    )}
+            <div className="py-8">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-8">
 
-                                    <Link href={route('academics.subjects.manage', subject.id)} className="block mt-2">
-                                        <div className="flex items-start justify-between mb-4 pr-16">
-                                            <div>
-                                                <h4 className="text-lg font-bold text-emerald-700 hover:text-emerald-800">{subject.name}</h4>
-                                                <span className="text-xs font-mono text-gray-500">{subject.code}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="space-y-3 pt-3 border-t border-gray-100 mt-2">
-                                            <div className="flex justify-between items-center text-gray-600 text-sm">
-                                                <div className="flex items-center">
-                                                    <Users className="w-4 h-4 mr-2 text-indigo-400" />
-                                                    <span>Classes</span>
-                                                </div>
-                                                <span className="font-semibold text-gray-900">{subject.class_groups_count}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-gray-600 text-sm">
-                                                <div className="flex items-center">
-                                                    <GraduationCap className="w-4 h-4 mr-2 text-blue-400" />
-                                                    <span>Students</span>
-                                                </div>
-                                                <span className="font-semibold text-gray-900">{subject.students_count}</span>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </div>
-                            ))}
-
-                            {subjects.length === 0 && (
-                                <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                    <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-                                    <p>No subjects found.</p>
-                                    {canManageSubjects && (
-                                        <PrimaryButton className="mt-4" onClick={openCreateModal}>
-                                            <Plus className="w-4 h-4 mr-2" /> Create First Subject
-                                        </PrimaryButton>
-                                    )}
-                                </div>
-                            )}
+                    {/* Info Banner */}
+                    <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+                        <School className="w-5 h-5 mt-0.5 shrink-0 text-blue-500" />
+                        <div>
+                            <strong>Operational View Only.</strong> To create, rename, or delete Subjects, go to{' '}
+                            <Link href={route('school-setup.index')} className="underline font-semibold hover:text-blue-900">
+                                School Setup → Subjects
+                            </Link>
+                            . Use this page to view subject coverage and drill into each subject's class and teacher assignments.
                         </div>
                     </div>
+
+                    {/* Stats Bar */}
+                    {subjects.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+                                <p className="text-3xl font-bold text-indigo-600">{subjects.length}</p>
+                                <p className="text-xs text-gray-500 mt-1">Total Subjects</p>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+                                <p className="text-3xl font-bold text-emerald-600">
+                                    {subjects.reduce((s, sub) => s + (sub.class_groups_count ?? 0), 0)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">Class Assignments</p>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+                                <p className="text-3xl font-bold text-amber-600">
+                                    {subjects.reduce((s, sub) => s + (sub.students_count ?? 0), 0)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">Student Enrolments</p>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+                                <p className="text-3xl font-bold text-sky-600">
+                                    {subjects.length > 0
+                                        ? (subjects.reduce((s, sub) => s + Number(sub.gpa_weight ?? 0), 0) / subjects.length).toFixed(1)
+                                        : '–'}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">Avg GPA Weight</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Subject Grid */}
+                    {subjects.length === 0 ? (
+                        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
+                            <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                            <h3 className="text-lg font-semibold text-gray-700">No Subjects Found</h3>
+                            <p className="text-gray-500 mt-1 mb-4">Start by creating Subjects in School Setup.</p>
+                            {canManageSchoolSetup && (
+                                <Link
+                                    href={route('school-setup.index')}
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    Go to School Setup
+                                </Link>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                            {subjects.map((subject, index) => {
+                                const colors = subjectColors[index % subjectColors.length];
+                                return (
+                                    <Link
+                                        key={subject.id}
+                                        href={route('academics.subjects.manage', subject.id)}
+                                        className="group block bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+                                    >
+                                        {/* Card header */}
+                                        <div className={`${colors.bg} p-5`}>
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <span className={`inline-block text-xs font-mono font-semibold px-2 py-0.5 rounded ${colors.badge} mb-2`}>
+                                                        {subject.code}
+                                                    </span>
+                                                    <h4 className="text-base font-bold text-gray-800 leading-tight">{subject.name}</h4>
+                                                </div>
+                                                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform shrink-0" />
+                                            </div>
+                                        </div>
+
+                                        {/* Stats */}
+                                        <div className="p-4 space-y-2.5">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-2 text-gray-500">
+                                                    <Users className={`w-4 h-4 ${colors.icon}`} />
+                                                    <span>Classes</span>
+                                                </div>
+                                                <span className="font-bold text-gray-800">{subject.class_groups_count}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-2 text-gray-500">
+                                                    <GraduationCap className={`w-4 h-4 ${colors.icon}`} />
+                                                    <span>Students</span>
+                                                </div>
+                                                <span className="font-bold text-gray-800">{subject.students_count}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-2 text-gray-500">
+                                                    <BookOpen className={`w-4 h-4 ${colors.icon}`} />
+                                                    <span>GPA Weight</span>
+                                                </div>
+                                                <span className="font-bold text-gray-800">{Number(subject.gpa_weight).toFixed(1)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="px-4 pb-4">
+                                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 group-hover:gap-2.5 transition-all">
+                                                View Details & Assignments <ArrowRight className="w-3.5 h-3.5" />
+                                            </span>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
-
-            <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <div className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900 mb-6">
-                        {editingSubject ? 'Edit Subject' : 'Create New Subject'}
-                    </h2>
-                    <form onSubmit={submit} className="space-y-6">
-                        <div>
-                            <InputLabel value="Subject Name *" />
-                            <TextInput
-                                className="mt-1 block w-full"
-                                value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                required
-                                placeholder="e.g. Mathematics"
-                            />
-                            <InputError message={errors.name} className="mt-2" />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <InputLabel value="Subject Code *" />
-                                <TextInput
-                                    className="mt-1 block w-full"
-                                    value={data.code}
-                                    onChange={(e) => setData('code', e.target.value)}
-                                    required
-                                    placeholder="e.g. MTH101"
-                                />
-                                <InputError message={errors.code} className="mt-2" />
-                            </div>
-                            <div>
-                                <InputLabel value="GPA Weight *" />
-                                <TextInput
-                                    type="number"
-                                    step="0.1"
-                                    min="0"
-                                    max="5"
-                                    className="mt-1 block w-full"
-                                    value={data.gpa_weight}
-                                    onChange={(e) => setData('gpa_weight', e.target.value)}
-                                    required
-                                />
-                                <InputError message={errors.gpa_weight} className="mt-2" />
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex justify-end gap-3">
-                            <SecondaryButton onClick={() => setIsModalOpen(false)}>Cancel</SecondaryButton>
-                            <PrimaryButton disabled={processing}>
-                                {processing ? 'Saving...' : 'Save Subject'}
-                            </PrimaryButton>
-                        </div>
-                    </form>
-                </div>
-            </Modal>
         </AuthenticatedLayout>
     );
 }

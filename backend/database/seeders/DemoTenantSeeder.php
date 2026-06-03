@@ -381,6 +381,79 @@ class DemoTenantSeeder extends Seeder
                 ]
             );
 
+            // ─── 9. Academics, Timetable, Clinic, Awards & Documents (Portal Data) ────────
+
+            // Assessments & Marks
+            $assessment1 = \App\Models\Assessment::query()->firstOrCreate(
+                ['school_id' => $school->id, 'title' => 'Mid Term Test', 'subject_id' => \App\Models\Subject::where('code', 'MATH')->first()->id],
+                ['academic_year_id' => $academicYear->id, 'class_group_id' => $classGroup->id, 'term_id' => Term::first()->id, 'type' => 'Test', 'max_score' => 100, 'weight' => 20, 'due_at' => Carbon::now()->subDays(15)]
+            );
+            $assessment2 = \App\Models\Assessment::query()->firstOrCreate(
+                ['school_id' => $school->id, 'title' => 'Science Project', 'subject_id' => \App\Models\Subject::where('code', 'SCI')->first()->id],
+                ['academic_year_id' => $academicYear->id, 'class_group_id' => $classGroup->id, 'term_id' => Term::first()->id, 'type' => 'Project', 'max_score' => 100, 'weight' => 30, 'due_at' => Carbon::now()->subDays(10)]
+            );
+
+            \App\Models\AssessmentMark::query()->firstOrCreate(
+                ['school_id' => $school->id, 'assessment_id' => $assessment1->id, 'student_id' => $studentRecord->id],
+                ['score' => 88, 'grade' => 'A', 'comment' => 'Great work in algebra!']
+            );
+            \App\Models\AssessmentMark::query()->firstOrCreate(
+                ['school_id' => $school->id, 'assessment_id' => $assessment2->id, 'student_id' => $studentRecord->id],
+                ['score' => 92, 'grade' => 'A', 'comment' => 'Excellent project execution.']
+            );
+
+            // Timetable Periods
+            $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            $mathSubject = \App\Models\Subject::where('code', 'MATH')->first();
+            $engSubject = \App\Models\Subject::where('code', 'ENG')->first();
+            $sciSubject = \App\Models\Subject::where('code', 'SCI')->first();
+            
+            foreach ($days as $day) {
+                // Period 1
+                \App\Models\TimetablePeriod::query()->firstOrCreate(
+                    ['class_group_id' => $classGroup->id, 'day_of_week' => $day, 'start_time' => '08:00:00', 'end_time' => '08:40:00'],
+                    ['subject_id' => $mathSubject->id, 'teacher_id' => $teacher->id, 'room' => 'Room 101']
+                );
+                // Period 2
+                \App\Models\TimetablePeriod::query()->firstOrCreate(
+                    ['class_group_id' => $classGroup->id, 'day_of_week' => $day, 'start_time' => '08:40:00', 'end_time' => '09:20:00'],
+                    ['subject_id' => collect([$engSubject, $sciSubject])->random()->id, 'teacher_id' => $teacher->id, 'room' => 'Room 101']
+                );
+                // Break
+                \App\Models\TimetablePeriod::query()->firstOrCreate(
+                    ['class_group_id' => $classGroup->id, 'day_of_week' => $day, 'start_time' => '10:00:00', 'end_time' => '10:30:00'],
+                    ['is_break' => true, 'name' => 'Morning Break']
+                );
+            }
+
+            // Clinic Visits
+            \App\Models\ClinicVisit::query()->firstOrCreate(
+                ['student_id' => $studentRecord->id, 'date' => Carbon::now()->subDays(5)->format('Y-m-d')],
+                ['condition' => 'Headache', 'action' => 'Given Paracetamol, rested for 1 hour', 'notes' => 'Returned to class after rest']
+            );
+
+            // Awards
+            \App\Models\StudentAward::query()->firstOrCreate(
+                ['student_id' => $studentRecord->id, 'title' => 'Student of the Month', 'date' => Carbon::now()->subMonths(1)->format('Y-m-d')],
+                ['category' => 'Academic Excellence', 'description' => 'Awarded for outstanding performance in mathematics.']
+            );
+
+            // Documents
+            \App\Models\StudentDocument::query()->firstOrCreate(
+                ['student_id' => $studentRecord->id, 'document_type' => 'Admission Letter'],
+                ['file_path' => '#', 'file_name' => 'Admission_Letter_2026.pdf']
+            );
+            \App\Models\StudentDocument::query()->firstOrCreate(
+                ['student_id' => $studentRecord->id, 'document_type' => 'Medical Clearance'],
+                ['file_path' => '#', 'file_name' => 'Medical_Clearance.pdf']
+            );
+
+            // Discipline
+            \App\Models\DisciplineRecord::query()->firstOrCreate(
+                ['school_id' => $school->id, 'student_id' => $studentRecord->id, 'reported_by' => $teacher->id, 'date' => Carbon::now()->subDays(20)->format('Y-m-d')],
+                ['incident_type' => 'Late Coming', 'description' => 'Arrived 15 minutes late for first period.', 'action_taken' => 'Verbal Warning', 'severity' => 'low', 'points_deducted' => 1, 'status' => 'recorded']
+            );
+
         });
 
         $this->command->info('✅ Demo tenant seeded: Sunrise Academy, Lilongwe, Malawi');

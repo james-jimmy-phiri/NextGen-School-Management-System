@@ -106,6 +106,21 @@ class Student extends Model
         return $this->hasMany(StudentEnrollment::class);
     }
 
+    public function marks(): HasMany
+    {
+        return $this->hasMany(AssessmentMark::class);
+    }
+
+    public function clinicVisits(): HasMany
+    {
+        return $this->hasMany(ClinicVisit::class);
+    }
+
+    public function awards(): HasMany
+    {
+        return $this->hasMany(StudentAward::class);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

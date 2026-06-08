@@ -2,36 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class StudentEnrollment extends Model
+class ReportCard extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'school_id',
         'student_id',
         'academic_year_id',
-        'class_group_id',
-        'stream_id',
-        'campus_id',
-        'mode_of_study',
-        'year_of_study',
         'term_id',
-        'start_date',
-        'end_date',
+        'gpa',
+        'rank',
+        'summary',
         'status',
-        'promoted_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'promoted_at' => 'datetime',
-            'start_date' => 'date',
-            'end_date' => 'date',
+            'gpa' => 'decimal:2',
+            'summary' => 'array',
         ];
     }
 
@@ -50,13 +41,8 @@ class StudentEnrollment extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
-    public function classGroup(): BelongsTo
+    public function term(): BelongsTo
     {
-        return $this->belongsTo(ClassGroup::class);
-    }
-
-    public function stream(): BelongsTo
-    {
-        return $this->belongsTo(Stream::class);
+        return $this->belongsTo(Term::class);
     }
 }

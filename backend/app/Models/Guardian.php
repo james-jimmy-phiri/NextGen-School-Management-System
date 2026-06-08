@@ -19,6 +19,12 @@ class Guardian extends Model
         'relationship',
         'email',
         'phone',
+        'gender',
+        'national_id',
+        'occupation',
+        'employer',
+        'alternative_phone',
+        'address',
     ];
 
     public function school(): BelongsTo

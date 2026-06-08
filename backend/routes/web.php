@@ -47,8 +47,36 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
 
     Route::resource('schools', SchoolController::class)->except(['show']);
     Route::resource('students', StudentController::class);
-    Route::resource('guardians', \App\Http\Controllers\Web\GuardianController::class);
+    Route::get('/guardians', [\App\Http\Controllers\Web\GuardianController::class, 'index'])->name('guardians.index');
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/mark', [AttendanceController::class, 'mark'])->name('attendance.mark');
+    Route::post('/attendance/sessions', [AttendanceController::class, 'storeSession'])->name('attendance.sessions.store');
+
+    Route::prefix('finance')->name('finance.')->group(function (): void {
+        Route::get('/fee-structures', [\App\Http\Controllers\Web\Finance\FeeStructureController::class, 'index'])->name('fee-structures.index');
+        Route::get('/fee-structures/create', [\App\Http\Controllers\Web\Finance\FeeStructureController::class, 'create'])->name('fee-structures.create');
+        Route::post('/fee-structures', [\App\Http\Controllers\Web\Finance\FeeStructureController::class, 'store'])->name('fee-structures.store');
+        Route::get('/invoices', [\App\Http\Controllers\Web\Finance\InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/invoices/create', [\App\Http\Controllers\Web\Finance\InvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/invoices', [\App\Http\Controllers\Web\Finance\InvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/invoices/{invoice}', [\App\Http\Controllers\Web\Finance\InvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('/payments', [\App\Http\Controllers\Web\Finance\PaymentController::class, 'index'])->name('payments.index');
+        Route::get('/payments/create', [\App\Http\Controllers\Web\Finance\PaymentController::class, 'create'])->name('payments.create');
+        Route::post('/payments', [\App\Http\Controllers\Web\Finance\PaymentController::class, 'store'])->name('payments.store');
+    });
+
+    Route::get('/announcements', [\App\Http\Controllers\Web\AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::get('/announcements/create', [\App\Http\Controllers\Web\AnnouncementController::class, 'create'])->name('announcements.create');
+    Route::post('/announcements', [\App\Http\Controllers\Web\AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::delete('/announcements/{announcement}', [\App\Http\Controllers\Web\AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+
+    Route::get('/calendar-events', [\App\Http\Controllers\Web\SchoolCalendarEventController::class, 'index'])->name('calendar-events.index');
+    Route::post('/calendar-events', [\App\Http\Controllers\Web\SchoolCalendarEventController::class, 'store'])->name('calendar-events.store');
+    Route::delete('/calendar-events/{event}', [\App\Http\Controllers\Web\SchoolCalendarEventController::class, 'destroy'])->name('calendar-events.destroy');
+
+    Route::get('/academics/marks', [\App\Http\Controllers\Web\MarkEntryController::class, 'index'])->name('academics.marks.index');
+    Route::get('/academics/marks/{assessment}', [\App\Http\Controllers\Web\MarkEntryController::class, 'edit'])->name('academics.marks.edit');
+    Route::patch('/academics/marks/{assessment}', [\App\Http\Controllers\Web\MarkEntryController::class, 'update'])->name('academics.marks.update');
 
     // Admin Admissions Module
     Route::get('/admissions', [\App\Http\Controllers\AdmissionController::class, 'index'])->name('admissions.index');

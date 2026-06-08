@@ -1,60 +1,37 @@
-import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
-import { PageProps } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { Users, Search } from 'lucide-react';
+import type { PageProps } from '@/types';
+import { useState } from 'react';
 
-export default function Index({ auth, guardians }: PageProps<{ guardians: any }>) {
+export default function Index({ guardians, filters }: PageProps<{ guardians: any; filters: any }>) {
+    const rows = guardians.data ?? guardians;
+    const [search, setSearch] = useState(filters?.search ?? '');
+
     return (
-        <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Parents & Guardians</h2>}
-        >
+        <AuthenticatedLayout>
             <Head title="Guardians" />
-
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {guardians?.data?.map((guardian: any) => (
-                                        <tr key={guardian.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {guardian.first_name} {guardian.last_name}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {guardian.email}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {guardian.phone}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <Link href={route('guardians.edit', guardian.id)} className="text-indigo-600 hover:text-indigo-900">
-                                                    Edit
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {(!guardians || !guardians.data || guardians.data.length === 0) && (
-                                        <tr>
-                                            <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                                                No guardians registered yet.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-
-                        </div>
+            <div className="max-w-5xl mx-auto py-8">
+                <h1 className="text-2xl font-bold flex items-center gap-2 mb-6"><Users className="h-6 w-6 text-primary" /> Guardians</h1>
+                <form onSubmit={e => { e.preventDefault(); router.get(route('guardians.index'), { search }); }} className="mb-4 flex gap-2">
+                    <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input className="w-full pl-9 rounded-lg border" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search guardians..." />
                     </div>
+                </form>
+                <div className="rounded-2xl border bg-card overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead className="bg-muted/50 text-xs uppercase"><tr><th className="px-4 py-3 text-left">Name</th><th className="px-4 py-3 text-left">Contact</th><th className="px-4 py-3 text-left">Children</th></tr></thead>
+                        <tbody className="divide-y">
+                            {rows.map((g: any) => (
+                                <tr key={g.id}>
+                                    <td className="px-4 py-3 font-medium">{g.first_name} {g.last_name}</td>
+                                    <td className="px-4 py-3">{g.phone}<br /><span className="text-muted-foreground text-xs">{g.email}</span></td>
+                                    <td className="px-4 py-3">{(g.students ?? []).map((s: any) => `${s.first_name} ${s.last_name}`).join(', ') || '—'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </AuthenticatedLayout>

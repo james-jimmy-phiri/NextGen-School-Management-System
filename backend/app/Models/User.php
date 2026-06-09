@@ -79,6 +79,41 @@ class User extends Authenticatable
         return $this->hasMany(UserDevice::class);
     }
 
+    public function staffProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    public function assignedTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class, 'assigned_to');
+    }
+
+    public function reviewedLeaves(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class, 'reviewed_by');
+    }
+
+    public function approvedPayrolls(): HasMany
+    {
+        return $this->hasMany(Payroll::class, 'approved_by');
+    }
+
+    public function allocatedHostels(): HasMany
+    {
+        return $this->hasMany(HostelAllocation::class, 'allocated_by');
+    }
+
+    public function issuedBorrowings(): HasMany
+    {
+        return $this->hasMany(BookBorrowing::class, 'issued_by');
+    }
+
     // ─── Scopes ────────────────────────────────────────────────────────────────
 
     public function scopeForSchool($query, int $schoolId)

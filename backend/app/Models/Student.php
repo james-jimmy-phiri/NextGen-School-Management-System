@@ -121,6 +121,21 @@ class Student extends Model
         return $this->hasMany(StudentAward::class);
     }
 
+    public function hostelAllocations(): HasMany
+    {
+        return $this->hasMany(HostelAllocation::class);
+    }
+
+    public function studentTransports(): HasMany
+    {
+        return $this->hasMany(StudentTransport::class);
+    }
+
+    public function borrowings(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(BookBorrowing::class, 'borrower');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

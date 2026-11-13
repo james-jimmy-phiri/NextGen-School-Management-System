@@ -11,6 +11,8 @@ import Streams from './Partials/Streams';
 import Subjects from './Partials/Subjects';
 import Departments from './Partials/Departments';
 import GradingSystem from './Partials/GradingSystem';
+import DocumentNumbers from './Partials/DocumentNumbers';
+import CommunicationSettings from './Partials/CommunicationSettings';
 import { Toaster } from 'react-hot-toast';
 
 interface Props extends PageProps {
@@ -29,6 +31,7 @@ interface Props extends PageProps {
     grade_levels_list: any[];
     class_groups_list: any[];
     departments_list: any[];
+    document_sequences?: any[];
 }
 
 export default function SchoolSetupIndex(props: Props) {
@@ -45,6 +48,8 @@ export default function SchoolSetupIndex(props: Props) {
 
     const tabs = [
         { id: 'profile', label: 'School Profile', permission: props.permissions.can_edit_school },
+        { id: 'numbering', label: 'Document Numbering', permission: props.permissions.can_edit_school },
+        { id: 'communication', label: 'Communication', permission: props.permissions.can_edit_school },
         { id: 'academic_years', label: 'Academic Years', permission: props.permissions.can_manage_academic_years },
         { id: 'terms', label: 'Terms / Semesters', permission: props.permissions.can_manage_terms },
         { id: 'departments', label: 'Departments', permission: props.permissions.can_manage_subjects },
@@ -103,6 +108,18 @@ export default function SchoolSetupIndex(props: Props) {
                             className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 lg:p-8"
                         >
                             {activeTab === 'profile' && <SchoolProfile initialData={props.school} />}
+                            {activeTab === 'numbering' && (
+                                <DocumentNumbers
+                                    sequences={props.document_sequences ?? []}
+                                    printHeader={props.school?.settings?.print?.header}
+                                    printFooter={props.school?.settings?.print?.footer}
+                                />
+                            )}
+                            {activeTab === 'communication' && (
+                                <CommunicationSettings
+                                    settings={props.school?.settings?.communication ?? {}}
+                                />
+                            )}
                             {activeTab === 'academic_years' && <AcademicYears years={props.academic_years} />}
                             {activeTab === 'terms' && <Terms terms={props.terms} academicYearsList={props.academic_years_list} />}
                             {activeTab === 'departments' && <Departments departments={props.departments} teachersList={props.teachers_list} />}

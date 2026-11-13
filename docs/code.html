@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduTrack - Empowering Education</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600;700&amp;family=Open+Sans:wght@400;600;700&amp;family=Oswald:wght@500&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "heritage-gold": "#DFAC29",
+                        "on-tertiary-container": "#b98f5c",
+                        "surface-tint": "#485f83",
+                        "on-tertiary-fixed": "#2a1700",
+                        "on-primary-container": "#8098bf",
+                        "on-primary-fixed-variant": "#2f486a",
+                        "on-primary-fixed": "#001c3a",
+                        "on-tertiary-fixed-variant": "#604014",
+                        "surface-container-high": "#e9e7eb",
+                        "surface-alt": "#F2F5F8",
+                        "on-background": "#1a1c1e",
+                        "primary-fixed-dim": "#afc8f1",
+                        "primary": "#001b39",
+                        "surface-container": "#efedf1",
+                        "stanner-blue": "#0072CE",
+                        "primary-container": "#163051",
+                        "on-secondary-container": "#006180",
+                        "on-surface-variant": "#43474e",
+                        "tertiary-fixed-dim": "#edbe87",
+                        "surface-bright": "#faf9fc",
+                        "outline-variant": "#c4c6cf",
+                        "inverse-on-surface": "#f2f0f3",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#dbd9dd",
+                        "secondary-fixed": "#c0e8ff",
+                        "secondary": "#016686",
+                        "surface-container-low": "#f4f3f6",
+                        "tertiary": "#291600",
+                        "background": "#faf9fc",
+                        "surface-variant": "#e3e2e5",
+                        "on-secondary-fixed": "#001e2b",
+                        "on-surface": "#1a1c1e",
+                        "secondary-container": "#93dbff",
+                        "on-secondary-fixed-variant": "#004d66",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#2f3033",
+                        "secondary-fixed-dim": "#87d0f4",
+                        "primary-fixed": "#d4e3ff",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "surface": "#faf9fc",
+                        "inverse-primary": "#afc8f1",
+                        "surface-container-highest": "#e3e2e5",
+                        "outline": "#74777f",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#ffddb8",
+                        "tertiary-container": "#452900",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "nav-blue": "#004d66"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-desktop": "64px",
+                        "section-gap": "120px",
+                        "base": "8px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Open Sans"],
+                        "label-caps": ["Open Sans"],
+                        "headline-lg-mobile": ["IBM Plex Serif"],
+                        "body-lg": ["Open Sans"],
+                        "headline-md": ["IBM Plex Serif"],
+                        "headline-xl": ["IBM Plex Serif"],
+                        "headline-lg": ["IBM Plex Serif"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["14px", { "lineHeight": "20px", "letterSpacing": "0.1em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased overflow-x-hidden">
+<!-- Updated TopNavBar -->
+<header class="absolute top-0 w-full z-50 bg-gradient-to-b from-[#001c3a]/90 to-transparent pb-8 pt-4">
+<div class="flex flex-row w-full px-margin-mobile md:px-margin-desktop max-w-[1440px] mx-auto justify-between items-start">
+<!-- Logo Area -->
+<a class="flex flex-col text-white shrink-0 mt-2 hover:opacity-90 transition-opacity" href="#">
+<div class="flex items-center gap-3">
+<div class="w-12 h-16 border border-white/50 flex flex-col items-center justify-center rounded-b-lg">
+<span class="font-serif text-xl font-bold">M</span>
+<span class="text-[8px] mt-1 border-t border-white/50 pt-1">1957</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs uppercase tracking-[0.2em] leading-none mb-1 font-body-md">Archbishop</span>
+<span class="text-4xl font-serif font-bold leading-none tracking-tight">MOLLOY</span>
+<span class="text-xs uppercase tracking-[0.2em] leading-none mt-2 font-body-md">High School</span>
+</div>
+</div>
+</a>
+<!-- Navigation Area -->
+<div class="flex flex-col items-end w-full pl-8">
+<!-- Top Utility Bar -->
+<div class="flex flex-wrap justify-end items-center gap-6 mb-8 text-[11px] font-bold tracking-widest text-white uppercase font-body-md">
+<a class="hover:text-secondary-container transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">hive</span> THE BEEHIVE
+                </a>
+<a class="hover:text-secondary-container transition-colors" href="#">BLACKBAUD</a>
+<a class="hover:text-secondary-container transition-colors" href="#">CALENDARS</a>
+<a class="hover:text-secondary-container transition-colors" href="#">STUDENTS</a>
+<a class="hover:text-secondary-container transition-colors" href="#">PARENTS</a>
+<a class="hover:text-secondary-container transition-colors" href="#">ALUMNI</a>
+<button aria-label="Search" class="hover:text-secondary-container transition-colors ml-2">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</button>
+<a class="bg-secondary-container text-nav-blue px-6 py-2 rounded-full hover:bg-white transition-colors ml-2" href="#">NEWS</a>
+</div>
+<!-- Main Nav Links -->
+<nav class="hidden md:flex items-center gap-8 text-sm font-bold tracking-widest text-white uppercase font-body-md">
+<a class="hover:text-secondary-container transition-colors pb-2 border-b-2 border-transparent hover:border-secondary-container" href="#">ABOUT</a>
+<div class="group relative">
+<a class="hover:text-secondary-container transition-colors pb-2 border-b-2 border-transparent group-hover:border-secondary-container border-secondary-container text-secondary-container" href="#">ADMISSIONS</a>
+<!-- Mega Menu -->
+<div class="absolute top-full right-0 mt-2 w-[850px] bg-nav-blue text-white hidden group-hover:flex shadow-2xl z-50 rounded-sm overflow-hidden">
+<!-- Image Card -->
+<div class="w-[35%] relative group/card cursor-pointer bg-white">
+<img alt="Apply Now" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLvmNSPTPsMchSLYO_jEkpPyU5Yo3iJOax30XM0TsMasz1fUK1lfSA1wLMe9tm9rJvZrhP6nxGrVxvE6mU_OMw-i4r9a3HI8VZhx29BUhoLmCLsaQ87FVL62Vk5sP_zgODclgyytGR8rFS5_RQvmtFg9MgMMZ2DlQRQyFFtf9c4o5cFyOg1rDdqqSTwvrXwBdCIDI8RA1LvmDy3wKtHNlToM7D_1-ZGQBzQS_-KW18yUwMkb9uVuhJKJBtj8"/>
+<div class="absolute bottom-0 left-0 w-full bg-secondary-fixed/90 text-nav-blue p-4 flex items-center justify-between font-bold text-sm hover:bg-secondary-fixed transition-colors">
+                            APPLY NOW
+                            <span class="material-symbols-outlined">arrow_forward</span>
+</div>
+</div>
+<!-- Links Columns -->
+<div class="w-[65%] p-8 grid grid-cols-2 gap-x-8 gap-y-2">
+<div class="flex flex-col">
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Admissions Overview</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Inquire</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Apply or Transfer</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">8th Grade Timeline</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Tuition</a>
+</div>
+<div class="flex flex-col">
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Scholarships</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Frequently Asked Questions</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Summer Enrichment Program</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">Freshman Camp</a>
+<a class="py-3.5 border-b border-white/20 hover:text-secondary-container transition-colors font-semibold capitalize tracking-normal text-[15px]" href="#">TACHS Prep Program</a>
+</div>
+</div>
+</div>
+</div>
+<a class="hover:text-secondary-container transition-colors pb-2 border-b-2 border-transparent hover:border-secondary-container" href="#">ACADEMICS</a>
+<a class="hover:text-secondary-container transition-colors pb-2 border-b-2 border-transparent hover:border-secondary-container" href="#">ATHLETICS</a>
+<a class="hover:text-secondary-container transition-colors pb-2 border-b-2 border-transparent hover:border-secondary-container" href="#">STUDENT LIFE</a>
+<a class="hover:text-secondary-container transition-colors pb-2 border-b-2 border-transparent hover:border-secondary-container" href="#">DEPARTMENTS</a>
+<a class="hover:text-secondary-container transition-colors pb-2 border-b-2 border-transparent hover:border-secondary-container" href="#">GIVING</a>
+</nav>
+<!-- Mobile Menu Button -->
+<button class="md:hidden text-white mt-4 self-end">
+<span class="material-symbols-outlined text-[28px]" data-icon="menu">menu</span>
+</button>
+</div>
+</div>
+</header>
+<main>
+<!-- Updated Hero Section -->
+<section class="relative w-full h-screen min-h-[700px] flex items-end pb-32 overflow-hidden">
+<!-- Background Image Placeholder -->
+<div class="absolute inset-0 z-0 bg-primary">
+<img alt="" class="w-full h-full object-cover object-center opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASD6DVIQE_U35nVKW0egLlM1Qf-2ZuIzUoIE8xK1NRYSB3zi7LmFcFvb9W3MMP5GwpDdpSsWJwgpKAubKsqfc9P0IJkWpMsqAwPuscWu0sdksLvLRO3eyAfTWTFZsgqrtD415jXrT7nLS4HXjZevkAF02tzVXQ9QUIJmdEh7tVx-5henoya1sw3y4GTj4xUBy6gdwPDQmi81NQgwyi4WjG-o-ojLmyYAKkDX2zLv2LDvfUUq0MpDVmEBFDLQt9AKyDsDjrxedsdDrm"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#001c3a]/90 via-[#001c3a]/20 to-transparent"></div>
+</div>
+<div class="relative z-10 w-full max-w-[1440px] mx-auto px-margin-mobile md:px-margin-desktop text-white">
+<div class="max-w-4xl pl-6 border-l-4 border-secondary-container">
+<p class="font-body-md font-bold text-sm tracking-[0.3em] uppercase mb-4 text-white">
+                        WE ARE BOLD
+                    </p>
+<h1 class="font-body-md font-bold text-5xl md:text-[80px] leading-[0.9] mb-10 tracking-tight uppercase">
+                        WE ARE <span class="text-secondary-container">STANNERS</span>
+</h1>
+<a class="inline-flex justify-center items-center font-body-md font-bold text-sm uppercase tracking-widest bg-white text-primary px-8 py-3.5 rounded-full hover:bg-surface-variant transition-colors duration-300" href="#">
+                        BECOME A STANNER
+                    </a>
+</div>
+</div>
+</section>
+<!-- Welcome / Asymmetric Split Section -->
+<section class="py-section-gap px-margin-mobile md:px-margin-desktop bg-surface max-w-[1280px] mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-0 items-stretch">
+<!-- Left: Image Box -->
+<div class="lg:col-span-5 relative p-4 md:p-8">
+<!-- Decorative Background Shapes -->
+<div class="absolute inset-0 bg-secondary-fixed/40 translate-x-[-16px] translate-y-[16px] z-0"></div>
+<div class="absolute inset-0 bg-surface-variant translate-x-[16px] translate-y-[-16px] z-0"></div>
+<div class="relative z-10 w-full h-full min-h-[400px]">
+<img alt="" class="w-full h-full object-cover shadow-sm grayscale-[10%]" src="https://lh3.googleusercontent.com/aida/AP1WRLtJX3PcNrvshgsL-49mw_25IMG1456gLk8Glya84un7vw_2CM7npBpVAJZ138SmkReVt1bqV3yWb49dtefs5F-fCQbIjdwro9NGir-uads8uuYvThD8PsqN3ciwHBzvclpiLXraLZAhRoSGuO9FyBjIC2xiPEi6RsuLD6uekaR43V99Vfeeq1wg0NeSRIMhS4MGTCsS-Luo7lBb5n8in37iAVpaa_3Lm7nyKm05rVdh5baG4T4DM0sS1xUO"/>
+</div>
+</div>
+<!-- Right: Content Box -->
+<div class="lg:col-span-7 bg-primary text-on-primary p-10 md:p-16 flex flex-col justify-center relative z-20 shadow-xl shadow-primary/10 lg:-ml-8 lg:mt-12">
+<p class="font-label-caps text-label-caps uppercase tracking-[0.2em] text-secondary-container mb-4 flex items-center gap-3">
+<span class="w-[2px] h-4 bg-heritage-gold inline-block"></span>
+                        Welcome to EduTrack
+                    </p>
+<h2 class="font-headline-lg text-headline-lg font-light mb-6">
+                        I <span class="font-bold">AM</span> an <span class="text-secondary-container font-serif italic">Innovator</span>
+</h2>
+<p class="font-body-md text-body-md text-primary-fixed-dim mb-8 leading-relaxed">
+                        EduTrack Systems provides top-tier SaaS platforms for Catholic and preparatory high schools nationwide. It's where deep-rooted faith meets robust service, and cutting-edge technology sparks true institutional innovation. Our unified ecosystem sets your faculty and students on a definitive path to success. EduTrack partners are bold, dynamic, supported, and ready to create an exciting educational future!
+                    </p>
+<div>
+<a class="inline-flex items-center font-label-caps text-label-caps uppercase tracking-widest bg-on-primary text-primary px-8 py-3 rounded-full hover:bg-surface-variant transition-colors duration-300" href="#">
+                            Learn More
+                        </a>
+</div>
+</div>
+</div>
+</section>
+<!-- By The Numbers (Stats) Section -->
+<section class="py-section-gap border-t border-surface-variant bg-surface-bright relative overflow-hidden">
+<!-- Subtle Watermark -->
+<div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
+<span class="material-symbols-outlined text-[400px]" data-icon="account_balance">account_balance</span>
+</div>
+<div class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop relative z-10">
+<div class="text-center mb-16">
+<p class="font-label-caps text-label-caps uppercase tracking-[0.2em] text-surface-tint mb-2">Learn about EduTrack</p>
+<h2 class="font-headline-xl text-headline-xl font-bold text-primary tracking-tight">BY THE NUMBERS</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border border-surface-variant bg-surface max-w-5xl mx-auto">
+<!-- Stat 1 -->
+<div class="p-12 text-center border-b border-r border-surface-variant lg:border-b-0 flex flex-col items-center justify-center group hover:bg-surface-alt transition-colors duration-300">
+<span class="font-headline-xl text-headline-xl font-light text-stanner-blue mb-2 group-hover:scale-110 transition-transform">100%</span>
+<p class="font-label-caps text-label-caps text-on-surface-variant tracking-wider uppercase">Data Accuracy</p>
+</div>
+<!-- Stat 2 -->
+<div class="p-12 text-center border-b border-surface-variant lg:border-r lg:border-b-0 flex flex-col items-center justify-center group hover:bg-surface-alt transition-colors duration-300">
+<span class="font-headline-xl text-headline-xl font-light text-stanner-blue mb-2 group-hover:scale-110 transition-transform">$1.3M</span>
+<p class="font-label-caps text-label-caps text-on-surface-variant tracking-wider uppercase">Saved Annually</p>
+</div>
+<!-- Stat 3 -->
+<div class="p-12 text-center border-b border-r border-surface-variant md:border-b-0 flex flex-col items-center justify-center group hover:bg-surface-alt transition-colors duration-300">
+<span class="font-headline-xl text-headline-xl font-light text-stanner-blue mb-2 group-hover:scale-110 transition-transform">25+</span>
+<p class="font-label-caps text-label-caps text-on-surface-variant tracking-wider uppercase">Integration Partners</p>
+</div>
+<!-- Stat 4 -->
+<div class="p-12 text-center flex flex-col items-center justify-center group hover:bg-surface-alt transition-colors duration-300">
+<span class="font-headline-xl text-headline-xl font-light text-stanner-blue mb-2 group-hover:scale-110 transition-transform">30+</span>
+<p class="font-label-caps text-label-caps text-on-surface-variant tracking-wider uppercase">SaaS Modules</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Latest News / Spotlight Section -->
+<section class="py-section-gap px-margin-mobile md:px-margin-desktop bg-surface max-w-[1280px] mx-auto border-t border-surface-variant">
+<div class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-primary mb-2">Latest News</h2>
+<p class="font-label-caps text-label-caps uppercase tracking-widest text-stanner-blue">In the spotlight</p>
+</div>
+<a class="font-label-caps text-label-caps uppercase tracking-widest text-primary hover:text-stanner-blue flex items-center gap-2 transition-colors" href="#">
+                    All News <span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<article class="bg-surface border border-surface-variant flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300">
+<div class="relative h-64 overflow-hidden">
+<img alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida/AP1WRLvLDVd6vwgZec_oZEv8mXSx93nva1WtKVuCCOVSaFoqd9PHUIPlrtVKSKeE4EUVXeYcpIzSci0SU3uNGYgmSyrzJvl7jFjL0ItSlmMcGl-t0lgc4RAL9_jIjtcXGxIFqA9lHROpELDWAhRIxALxjlUjBjjqnr9Fx4mDrHdyzjVw5uwyDWDp3_UFksPmXOJSRKrclHgdI5vgfbjStdgIcT9FHFPdg4wj6OGczkt_xD6f_zpXR1Pc71t0YGJk"/>
+<div class="absolute top-4 left-4 bg-heritage-gold text-primary font-label-caps text-label-caps px-3 py-1 text-xs uppercase tracking-wider">Academics</div>
+</div>
+<div class="p-8 flex flex-col flex-grow">
+<h3 class="font-headline-md text-headline-md font-semibold text-primary mb-3 leading-snug group-hover:text-stanner-blue transition-colors">EduTrack Platform Recognizes Stellar Institutions</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-3">
+                            Our annual review highlights schools that have fully integrated AI-driven analytics into their daily operational workflows, achieving unprecedented efficiency.
+                        </p>
+<div class="mt-auto">
+<span class="font-label-caps text-label-caps uppercase tracking-widest text-secondary flex items-center gap-1 group-hover:gap-2 transition-all">
+                                Read More <span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</span>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface border border-surface-variant flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300">
+<div class="relative h-64 overflow-hidden">
+<img alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida/AP1WRLu0MhgWy91BLAAW_V7bp-H-f-NOimoK0Hx3wCqb-MpMyRZGFGBfjuWhT9zuEJvgAZp1I6Y9LSJAO_FQ2NrjAnTjwknEsNHrMryTpFZJsfKS-PTa_XvNTmHABhocIp3TizErJGNHje8igk7O4CPAKl7az_zln73tSex9C56r-RW5QRulwVohFM8Vf2aMfFZqqz6JWNtNFcMsaKYE6bAqi4AFW-uCERV_kQr2CSCiJptxwJntO4lsg6CQS1c"/>
+<div class="absolute top-4 left-4 bg-stanner-blue text-on-primary font-label-caps text-label-caps px-3 py-1 text-xs uppercase tracking-wider">Technology</div>
+</div>
+<div class="p-8 flex flex-col flex-grow">
+<h3 class="font-headline-md text-headline-md font-semibold text-primary mb-3 leading-snug group-hover:text-stanner-blue transition-colors">Class of 2026 Adopts NFC Campus Cards</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-3">
+                            Incoming classes will experience a fully unified campus life, from library access to cafeteria transactions, powered by our seamless IoT integrations.
+                        </p>
+<div class="mt-auto">
+<span class="font-label-caps text-label-caps uppercase tracking-widest text-secondary flex items-center gap-1 group-hover:gap-2 transition-all">
+                                Read More <span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</span>
+</div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-primary border border-primary-container flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300">
+<div class="p-10 flex flex-col flex-grow relative overflow-hidden">
+<!-- Background Accent -->
+<div class="absolute -bottom-10 -right-10 opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-[180px]" data-icon="hub">hub</span>
+</div>
+<p class="font-label-caps text-label-caps uppercase tracking-widest text-heritage-gold mb-6">Upcoming Webinar</p>
+<h3 class="font-headline-md text-headline-md font-semibold text-on-primary mb-4 leading-snug">The Future of AI in Prep School Administration</h3>
+<p class="font-body-md text-body-md text-primary-fixed-dim mb-8">
+                            Join our panel of educational technology experts as they discuss the ethical and practical implementation of AI insights in student management.
+                        </p>
+<div class="mt-auto flex items-center justify-between border-t border-primary-container pt-6">
+<div class="text-on-primary">
+<p class="font-label-caps text-label-caps font-bold">OCT 15</p>
+<p class="text-sm opacity-80">2:00 PM EST</p>
+</div>
+<span class="w-10 h-10 rounded-full border border-surface-variant flex items-center justify-center text-on-primary group-hover:bg-heritage-gold group-hover:text-primary group-hover:border-heritage-gold transition-colors">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- Institutional Partners Logo Cloud -->
+<section class="py-16 bg-surface-container-low border-t border-surface-variant">
+<div class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop text-center">
+<h3 class="font-label-caps text-label-caps uppercase tracking-[0.2em] text-surface-tint mb-8">Trusted by Leading Institutions</h3>
+<div class="flex flex-wrap justify-center items-center gap-12 md:gap-20 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+<span class="font-headline-md text-headline-md font-bold text-primary">NYU</span>
+<span class="font-headline-md text-headline-md font-serif italic text-primary">Harvard</span>
+<span class="font-headline-md text-headline-md font-bold tracking-tighter text-primary">DARTMOUTH</span>
+<span class="font-headline-md text-headline-md font-light uppercase tracking-widest text-primary">Berkeley</span>
+<span class="font-headline-md text-headline-md font-serif text-primary">RICE</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-primary border-t border-primary-container full-width bottom-0 text-on-primary">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-mobile md:px-margin-desktop py-section-gap max-w-[1280px] mx-auto">
+<!-- Brand Column -->
+<div class="col-span-1 md:col-span-1 flex flex-col gap-6">
+<a class="font-headline-md text-headline-md text-heritage-gold flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[32px]" data-icon="school" data-weight="fill">school</span>
+                    EDUTRACK
+                </a>
+<p class="font-body-md text-body-md text-primary-fixed-dim text-sm max-w-[250px]">
+                    EduTrack Systems is a premier SaaS provider for educational institutions, located in New York.
+                </p>
+<div class="flex gap-4 text-heritage-gold mt-4">
+<a aria-label="Facebook" href="#"><span class="material-symbols-outlined" data-icon="language">language</span></a>
+<a aria-label="LinkedIn" href="#"><span class="material-symbols-outlined" data-icon="work">work</span></a>
+<a aria-label="Twitter" href="#"><span class="material-symbols-outlined" data-icon="forum">forum</span></a>
+</div>
+</div>
+<!-- Contact Column -->
+<div class="col-span-1 flex flex-col gap-4">
+<h4 class="font-label-caps text-label-caps uppercase tracking-widest text-secondary-container mb-2">Contact</h4>
+<p class="font-body-md text-body-md text-sm text-primary-fixed-dim">
+                    83-53 Manton Street<br/>
+                    Briarwood, NY 11435
+                </p>
+<div class="mt-2">
+<p class="font-label-caps text-label-caps text-xs text-on-primary opacity-60">GENERAL OFFICE HOURS:</p>
+<p class="font-body-md text-body-md text-sm text-primary-fixed-dim">Mon - Fri 7:30 am - 3:00 pm</p>
+</div>
+<p class="font-body-md text-body-md text-sm text-primary-fixed-dim">Phone: 718.441.2100</p>
+</div>
+<!-- Links Column 1 -->
+<div class="col-span-1 flex flex-col gap-4">
+<h4 class="font-label-caps text-label-caps uppercase tracking-widest text-secondary-container mb-2">Resources</h4>
+<a class="font-label-caps text-label-caps text-on-primary-container hover:text-heritage-gold hover:underline decoration-heritage-gold transition-colors duration-200" href="#">Contact Us</a>
+<a class="font-label-caps text-label-caps text-on-primary-container hover:text-heritage-gold hover:underline decoration-heritage-gold transition-colors duration-200" href="#">Privacy Policy</a>
+<a class="font-label-caps text-label-caps text-on-primary-container hover:text-heritage-gold hover:underline decoration-heritage-gold transition-colors duration-200" href="#">Terms of Service</a>
+</div>
+<!-- Links Column 2 -->
+<div class="col-span-1 flex flex-col gap-4 pt-0 md:pt-10">
+<a class="font-label-caps text-label-caps text-on-primary-container hover:text-heritage-gold hover:underline decoration-heritage-gold transition-colors duration-200" href="#">Alumni Portal</a>
+<a class="font-label-caps text-label-caps text-on-primary-container hover:text-heritage-gold hover:underline decoration-heritage-gold transition-colors duration-200" href="#">Parent Portal</a>
+<a class="font-label-caps text-label-caps text-on-primary-container hover:text-heritage-gold hover:underline decoration-heritage-gold transition-colors duration-200" href="#">Careers</a>
+</div>
+</div>
+<!-- Bottom Bar -->
+<div class="border-t border-primary-container bg-primary py-6">
+<div class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center text-xs text-primary-fixed-dim">
+<p class="font-body-md text-body-md text-xs">© 2024 EduTrack Institutional Systems. All Rights Reserved.</p>
+<div class="flex gap-4 mt-4 md:mt-0">
+<a class="hover:text-white transition-colors" href="#">Web Accessibility</a>
+<a class="hover:text-white transition-colors" href="#">Sitemap</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

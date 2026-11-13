@@ -32,6 +32,11 @@ class User extends Authenticatable
         'avatar_path',
         'preferences',
         'status',
+        'failed_login_attempts',
+        'locked_at',
+        'locked_reason',
+        'deactivated_at',
+        'deactivated_reason',
         'last_login_at',
         'last_login_ip',
     ];
@@ -41,13 +46,20 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $attributes = [
+        'status' => 'active',
+    ];
+
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'locked_at' => 'datetime',
+            'deactivated_at' => 'datetime',
             'password' => 'hashed',
             'preferences' => 'array',
+            'failed_login_attempts' => 'integer',
         ];
     }
 
@@ -135,7 +147,75 @@ class User extends Authenticatable
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === 'active' && ! $this->isLocked();
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->locked_at !== null;
+    }
+
+    public function registerFailedLogin(int $threshold = 5): void
+    {
+        $attempts = $this->failed_login_attempts + 1;
+        $payload = ['failed_login_attempts' => $attempts];
+
+        if ($attempts >= $threshold) {
+            $payload['locked_at'] = now();
+            $payload['locked_reason'] = 'Too many failed login attempts';
+            $payload['status'] = 'suspended';
+        }
+
+        $this->forceFill($payload)->save();
+    }
+
+    public function clearFailedLogins(): void
+    {
+        if ($this->failed_login_attempts === 0 && $this->locked_at === null) {
+            return;
+        }
+
+        $this->forceFill([
+            'failed_login_attempts' => 0,
+            'locked_at' => null,
+            'locked_reason' => null,
+        ])->save();
+    }
+
+    public function unlock(string $status = 'active'): void
+    {
+        $this->forceFill([
+            'failed_login_attempts' => 0,
+            'locked_at' => null,
+            'locked_reason' => null,
+            'status' => $status,
+        ])->save();
+    }
+
+    public function deactivate(string $reason): void
+    {
+        $this->forceFill([
+            'status' => 'inactive',
+            'deactivated_at' => now(),
+            'deactivated_reason' => $reason,
+        ])->save();
+    }
+
+    public function reactivate(): void
+    {
+        $this->forceFill([
+            'status' => 'active',
+            'deactivated_at' => null,
+            'deactivated_reason' => null,
+            'locked_at' => null,
+            'locked_reason' => null,
+            'failed_login_attempts' => 0,
+        ])->save();
+    }
+
+    public function isDeactivated(): bool
+    {
+        return $this->status === 'inactive' || $this->deactivated_at !== null;
     }
 
     public function hasSchool(): bool

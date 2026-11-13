@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/config/app_config.dart';
+import 'core/storage/hive_service.dart';
+import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/auth/state/auth_state.dart';
+import 'features/navigation/presentation/adaptive_home_router.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const ProviderScope(child: NextGenApp()));
-}
+  // Initialize Hive offline cache
+  await HiveService.init();
 
-final apiBaseProvider = Provider<String>(
-  (_) => String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000/api/v1'),
-);
+  runApp(
+    const ProviderScope(
+      child: NextGenApp(),
+    ),
+  );
+}
 
 class NextGenApp extends StatelessWidget {
   const NextGenApp({super.key});
@@ -17,50 +26,68 @@ class NextGenApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'NextGen School Companion',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4338CA)),
-        useMaterial3: true,
-      ),
-      home: const BootstrapScreen(),
+      title: AppConfig.appName,
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      home: const AuthGateScreen(),
     );
   }
 }
 
-class BootstrapScreen extends ConsumerWidget {
-  const BootstrapScreen({super.key});
+class AuthGateScreen extends ConsumerWidget {
+  const AuthGateScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final apiBase = ref.watch(apiBaseProvider);
+    final authState = ref.watch(authStateProvider);
 
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'NextGen School OS · Mobile Scaffold',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    switch (authState.status) {
+      case AuthStatus.initial:
+      case AuthStatus.loading:
+        // Render sleek splash / bootstrap loader while session is resolving
+        return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.school_rounded,
+                  size: 64,
+                  color: AppTheme.primary,
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'NextGen School OS',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Initializing session...',
+                  style: TextStyle(fontSize: 13, color: AppTheme.textMutedLight),
+                ),
+                SizedBox(height: 28),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              'API base resolved to:',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            SelectableText(apiBase),
-            const SizedBox(height: 28),
-            const Text(
-              '• Riverpod-powered view models aligned with Laravel API resources '
-              '(auth, dashboards, learners, guardian messaging).\n'
-              '• Hive CE stores attendance drafts + cached PDFs offline.\n'
-              '• Dio interceptors hydrate Sanctum bearer tokens synced from Laravel.',
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+
+      case AuthStatus.authenticated:
+        // Route dynamically to role-specific workspace (Parent, Teacher, Admin)
+        return const AdaptiveHomeRouter();
+
+      case AuthStatus.unauthenticated:
+      case AuthStatus.error:
+        // User needs to authenticate
+        return const LoginScreen();
+    }
   }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Register', [
+            'schools' => School::query()->where('is_active', true)->select('id', 'name', 'slug', 'city')->get(),
+        ]);
     }
 
     /**
@@ -35,13 +38,23 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'school_id' => ['nullable', 'integer'],
+            'role' => ['nullable', 'string', 'in:student,parent,teacher'],
         ]);
 
         $user = User::create([
+            'school_id' => $request->school_id,
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'status' => 'active',
         ]);
+
+        if ($request->filled('role')) {
+            $user->assignRole($request->role);
+        }
 
         event(new Registered($user));
 

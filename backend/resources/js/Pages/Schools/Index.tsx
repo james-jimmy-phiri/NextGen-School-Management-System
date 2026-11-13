@@ -1,18 +1,34 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { LaravelPagination, PageProps } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CheckCircle2, Globe, Pencil, PlusCircle, Trash2, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+    AlertCircle,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Download,
+    Globe,
+    Pencil,
+    Plus,
+    Trash2,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 type SchoolRow = {
     id: number;
+    uuid: string | null;
     name: string;
+    short_name: string | null;
     slug: string;
+    school_code: string | null;
+    school_type: string | null;
+    ownership: string | null;
     timezone: string | null;
     locale: string | null;
     email: string | null;
     phone: string | null;
     city: string | null;
+    district: string | null;
     country: string | null;
     currency: string | null;
     primary_color: string | null;
@@ -24,24 +40,23 @@ export default function SchoolsIndex() {
         PageProps<{ schools: LaravelPagination<SchoolRow> }>
     >().props;
 
-    const [flashMsg, setFlashMsg] = useState<{
-        type: 'success' | 'error';
-        text: string;
-    } | null>(null);
+    const [query, setQuery] = useState('');
+    const [filter, setFilter] = useState('All');
 
-    useEffect(() => {
-        if (flash?.success) {
-            setFlashMsg({ type: 'success', text: flash.success });
-        } else if (flash?.error) {
-            setFlashMsg({ type: 'error', text: flash.error });
-        }
-    }, [flash]);
-
-    useEffect(() => {
-        if (!flashMsg) return;
-        const timer = setTimeout(() => setFlashMsg(null), 4500);
-        return () => clearTimeout(timer);
-    }, [flashMsg]);
+    const filteredSchools = useMemo(() => {
+        return (schools.data || []).filter((s) => {
+            const matchesQuery =
+                s.name.toLowerCase().includes(query.toLowerCase()) ||
+                s.slug.toLowerCase().includes(query.toLowerCase()) ||
+                (s.email && s.email.toLowerCase().includes(query.toLowerCase())) ||
+                (s.city && s.city.toLowerCase().includes(query.toLowerCase()));
+            const matchesFilter =
+                filter === 'All' ||
+                (filter === 'Active' && s.is_active) ||
+                (filter === 'Inactive' && !s.is_active);
+            return matchesQuery && matchesFilter;
+        });
+    }, [schools.data, query, filter]);
 
     const handleDelete = (id: number, name: string) => {
         if (
@@ -53,213 +68,240 @@ export default function SchoolsIndex() {
         }
     };
 
+    const handleExport = () => {
+        const headers = ['ID', 'Name', 'Slug', 'Email', 'Location', 'Status'];
+        const csvRows = filteredSchools.map((s) => [
+            s.id,
+            `"${s.name.replace(/"/g, '""')}"`,
+            s.slug,
+            s.email ?? '',
+            `"${[s.city, s.country].filter(Boolean).join(', ')}"`,
+            s.is_active ? 'Active' : 'Inactive',
+        ]);
+        const csvContent =
+            'data:text/csv;charset=utf-8,' +
+            [headers.join(','), ...csvRows.map((r) => r.join(','))].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `schools_directory_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const breadcrumbs = [
+        { label: 'Superadmin', href: '/schools' },
+        { label: 'Schools & Tenants' },
+    ];
+
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                            Super admin
-                        </p>
-                        <h2 className="text-2xl font-semibold text-slate-900">
-                            Schools &amp; Tenants
-                        </h2>
-                    </div>
-                    <Link
-                        href={route('schools.create')}
-                        className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
-                    >
-                        <PlusCircle className="h-4 w-4" />
-                        New school
-                    </Link>
-                </div>
-            }
-        >
+        <AuthenticatedLayout breadcrumbs={breadcrumbs}>
             <Head title="Schools & Tenants" />
 
-            {/* Flash notification */}
-            {flashMsg && (
-                <div
-                    className={`mb-6 flex items-start gap-3 rounded-2xl px-5 py-4 text-sm font-medium shadow-sm ${
-                        flashMsg.type === 'success'
-                            ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
-                            : 'bg-red-50 text-red-800 ring-1 ring-red-200'
-                    }`}
-                >
-                    {flashMsg.type === 'success' ? (
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                    ) : (
-                        <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                    )}
-                    <span>{flashMsg.text}</span>
-                    <button
-                        type="button"
-                        onClick={() => setFlashMsg(null)}
-                        className="ml-auto shrink-0 text-xs underline opacity-70 hover:opacity-100"
-                    >
-                        Dismiss
-                    </button>
-                </div>
-            )}
+            <div className="school-app max-w-[1560px] mx-auto pb-8">
+                {/* ─── Flash Banner ─────────────────────────────────────────────── */}
+                {flash?.success ? (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <CheckCircle2 size={15} className="text-emerald-600" />
+                        <span>{flash.success}</span>
+                    </div>
+                ) : null}
 
-            <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                {/* Header */}
-                <div className="flex flex-col gap-2 border-b border-slate-100 px-8 py-6 sm:flex-row sm:items-center sm:justify-between">
+                {flash?.error ? (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+                        <AlertCircle size={15} className="text-rose-600" />
+                        <span>{flash.error}</span>
+                    </div>
+                ) : null}
+
+                {/* ─── Page Header ─────────────────────────────────────────────── */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                            Provisioned SaaS tenants
+                        <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1 leading-none">
+                            SUPERADMIN / MULTI-TENANCY
                         </p>
-                        <p className="text-sm text-slate-500">
-                            Each slug maps to branded assets and data isolation through{' '}
-                            <code className="font-mono text-xs text-slate-700">school_id</code>.
+                        <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-slate-900 dark:text-white leading-tight flex items-center">
+                            Schools &amp; Tenants <span className="title-dot" />
+                        </h1>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                            {schools.total} {schools.total === 1 ? 'school' : 'schools'} · Multi-tenant institutional management
                         </p>
                     </div>
-                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">
-                        {schools.total} {schools.total === 1 ? 'record' : 'records'}
-                    </p>
+
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:bg-slate-100 transition-all cursor-pointer dark:border-border dark:bg-card dark:text-slate-200 dark:hover:bg-muted"
+                        >
+                            <Download className="h-3.5 w-3.5 text-slate-500" />
+                            <span>Export</span>
+                        </button>
+                        <Link
+                            href={route('schools.create')}
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 active:bg-blue-800 transition-all cursor-pointer"
+                        >
+                            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                            <span>Add school</span>
+                        </Link>
+                    </div>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-100 text-sm">
-                        <thead>
-                            <tr className="text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                <th className="px-8 py-4">School</th>
-                                <th className="px-6 py-4">Slug</th>
-                                <th className="px-6 py-4">Timezone</th>
-                                <th className="px-6 py-4">Location</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {schools.data.length === 0 ? (
+                {/* ─── Panel Container with Directory Table ─────────────────────── */}
+                <div className="school-panel">
+                    <div className="panel-heading">
+                        <h2>Schools directory</h2>
+                        <span className="record-count">{schools.total} records</span>
+                    </div>
+
+                    {/* Toolbar */}
+                    <div className="directory-toolbar">
+                        <div className="search-field">
+                            <span className="text-xs text-slate-400">⌕</span>
+                            <input
+                                type="text"
+                                placeholder="Search schools..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                            />
+                        </div>
+
+                        <select
+                            className="directory-select"
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                        >
+                            <option value="All">All statuses</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    {/* Table */}
+                    <div className="table-scroll">
+                        <table className="school-table directory-table">
+                            <thead>
                                 <tr>
-                                    <td
-                                        colSpan={6}
-                                        className="px-8 py-16 text-center text-slate-400"
-                                    >
-                                        <Globe className="mx-auto mb-3 h-10 w-10 opacity-30" />
-                                        <p className="text-sm font-medium">No schools yet</p>
-                                        <p className="mt-1 text-xs">
-                                            Create the first tenant to get started.
-                                        </p>
-                                    </td>
+                                    <th>School</th>
+                                    <th>Slug / Code</th>
+                                    <th>Timezone</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th className="text-right">Actions</th>
                                 </tr>
-                            ) : (
-                                schools.data.map((school) => (
-                                    <tr
-                                        key={school.id}
-                                        className="group text-slate-700 transition-colors hover:bg-slate-50/60"
-                                    >
-                                        <td className="px-8 py-4">
-                                            <div className="flex items-center gap-3">
-                                                {/* Color swatch */}
-                                                <span
-                                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white shadow-sm"
-                                                    style={{
-                                                        backgroundColor:
-                                                            school.primary_color ?? '#0f172a',
-                                                    }}
-                                                >
-                                                    {school.name.charAt(0).toUpperCase()}
-                                                </span>
-                                                <div className="min-w-0">
-                                                    <p className="truncate font-semibold text-slate-900">
-                                                        {school.name}
-                                                    </p>
-                                                    {school.email && (
-                                                        <p className="truncate text-xs text-slate-400">
-                                                            {school.email}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <code className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
-                                                {school.slug}
-                                            </code>
-                                        </td>
-                                        <td className="px-6 py-4 text-xs text-slate-500">
-                                            {school.timezone ?? '—'}
-                                        </td>
-                                        <td className="px-6 py-4 text-xs text-slate-500">
-                                            {[school.city, school.country]
-                                                .filter(Boolean)
-                                                .join(', ') || '—'}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                                                    school.is_active
-                                                        ? 'bg-emerald-100 text-emerald-700'
-                                                        : 'bg-slate-100 text-slate-500'
-                                                }`}
-                                            >
-                                                <span
-                                                    className={`h-1.5 w-1.5 rounded-full ${
-                                                        school.is_active
-                                                            ? 'bg-emerald-500'
-                                                            : 'bg-slate-400'
-                                                    }`}
-                                                />
-                                                {school.is_active ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    href={route('schools.edit', school.id)}
-                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900"
-                                                >
-                                                    <Pencil className="h-3 w-3" />
-                                                    Edit
-                                                </Link>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleDelete(school.id, school.name)
-                                                    }
-                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-semibold text-red-500 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                    Delete
-                                                </button>
-                                            </div>
+                            </thead>
+                            <tbody>
+                                {filteredSchools.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-12 text-center text-slate-400">
+                                            <Globe size={32} className="mx-auto mb-2 opacity-30" />
+                                            <p className="text-xs font-semibold">No schools found</p>
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    filteredSchools.map((s) => (
+                                        <tr key={s.id}>
+                                            <td>
+                                                <div className="person-cell">
+                                                    <span
+                                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-black text-white shadow-2xs"
+                                                        style={{
+                                                            backgroundColor: s.primary_color ?? '#2563eb',
+                                                        }}
+                                                    >
+                                                        {s.name.charAt(0).toUpperCase()}
+                                                    </span>
+                                                    <div className="person-name">
+                                                        <strong>{s.name}</strong>
+                                                        <span>{s.short_name ? `${s.short_name} · ` : ''}{s.email || s.phone || 'No contact listed'}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="class-tag">{s.slug}</span>
+                                                    {s.school_code && (
+                                                        <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400">{s.school_code}</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="text-slate-600 dark:text-slate-300">
+                                                {s.timezone ?? 'UTC'}
+                                            </td>
+                                            <td className="text-slate-600 dark:text-slate-300">
+                                                {[s.city, s.country].filter(Boolean).join(', ') || '—'}
+                                            </td>
+                                            <td>
+                                                <span
+                                                    className={`status-pill ${
+                                                        s.is_active ? 'positive' : 'pending'
+                                                    }`}
+                                                >
+                                                    <span className="status-pill-dot" />
+                                                    {s.is_active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td className="text-right">
+                                                <div className="row-actions justify-end">
+                                                    <Link
+                                                        href={route('schools.edit', s.uuid ?? s.id)}
+                                                        title={`Edit ${s.name}`}
+                                                    >
+                                                        <Pencil size={13} />
+                                                    </Link>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(s.id, s.name)}
+                                                        title={`Delete ${s.name}`}
+                                                        className="action-delete"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="pagination">
+                        <span>
+                            {filteredSchools.length > 0 ? `1–${filteredSchools.length}` : '0'} of {schools.total} records
+                        </span>
+                        <div>
+                            <button
+                                type="button"
+                                disabled={schools.current_page <= 1}
+                                onClick={() =>
+                                    schools.prev_page_url && router.visit(schools.prev_page_url)
+                                }
+                            >
+                                <ChevronLeft size={13} />
+                            </button>
+                            <span>
+                                Page {schools.current_page} of {schools.last_page}
+                            </span>
+                            <button
+                                type="button"
+                                disabled={schools.current_page >= schools.last_page}
+                                onClick={() =>
+                                    schools.next_page_url && router.visit(schools.next_page_url)
+                                }
+                            >
+                                <ChevronRight size={13} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Pagination */}
-                {schools.last_page > 1 && (
-                    <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-8 py-4 text-xs text-slate-500">
-                        <span>
-                            Page {schools.current_page} of {schools.last_page} &middot;{' '}
-                            {schools.per_page} per page
-                        </span>
-                        <div className="flex gap-2">
-                            {schools.links.map((link, index) => (
-                                <Link
-                                    key={`${link.label}-${index}`}
-                                    preserveScroll
-                                    href={link.url ?? '#'}
-                                    className={`rounded-full px-3 py-1 ${
-                                        link.active
-                                            ? 'bg-slate-900 font-semibold text-white'
-                                            : 'bg-white text-slate-600 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50'
-                                    }`}
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                />
-                            ))}
-                        </div>
-                    </footer>
-                )}
-            </section>
+                <div className="sample-footnote">
+                    NextGen Platform <span>·</span> Multi-tenant Network Management
+                </div>
+            </div>
         </AuthenticatedLayout>
     );
 }

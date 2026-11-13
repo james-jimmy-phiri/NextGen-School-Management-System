@@ -1,6 +1,7 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
+import UserAvatar from '@/Components/UserAvatar';
 import {
     type NavContext,
     resolveNavigation,
@@ -14,6 +15,7 @@ import type { AuthUser, PageProps } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+    ArrowRight,
     Bell,
     ChevronDown,
     ChevronRight,
@@ -21,11 +23,15 @@ import {
     Menu,
     Moon,
     PanelLeft,
+    School,
     Search,
+    Settings,
+    Sparkles,
     Sun,
     X,
 } from 'lucide-react';
 import {
+    Fragment,
     PropsWithChildren,
     ReactNode,
     useCallback,
@@ -33,6 +39,11 @@ import {
     useMemo,
     useState,
 } from 'react';
+
+export type BreadcrumbItem = {
+    label: string;
+    href?: string;
+};
 
 const SIDEBAR_STORAGE_KEY = 'ng-admin-sidebar-expanded';
 
@@ -44,14 +55,68 @@ const demoNotifications = [
 
 export default function AuthenticatedLayout({
     header,
+    breadcrumbs,
     children,
-}: PropsWithChildren<{ header?: ReactNode }>) {
+}: PropsWithChildren<{ header?: ReactNode; breadcrumbs?: BreadcrumbItem[] }>) {
     const { auth, capabilities } = usePage<PageProps>().props;
     const page = usePage<PageProps>();
     const pageUrl = page.url;
     const currentRoute = route().current();
 
     const user = auth.user as AuthUser | null;
+    const schoolName = user?.school?.name ?? 'Sunrise Academy';
+
+    const defaultBreadcrumbs = useMemo<BreadcrumbItem[]>(() => {
+        const path = pageUrl.split('?')[0].replace(/^\/|\/$/g, '');
+        if (!path || path === 'dashboard') {
+            return [{ label: 'Workspace', href: '/dashboard' }, { label: 'Dashboard' }];
+        }
+
+        const segments = path.split('/');
+        const first = segments[0];
+
+        const sectionMap: Record<string, { section: string; sectionHref: string; label: string }> = {
+            students: { section: 'School Management', sectionHref: '/students', label: 'Students' },
+            users: { section: 'School Management', sectionHref: '/users', label: 'Teachers & Staff' },
+            guardians: { section: 'School Management', sectionHref: '/guardians', label: 'Parents' },
+            admissions: { section: 'School Management', sectionHref: '/admissions', label: 'Applications' },
+            attendance: { section: 'School Management', sectionHref: '/attendance', label: 'Attendance' },
+            classes: { section: 'Academics', sectionHref: '/classes', label: 'Classes & Subjects' },
+            subjects: { section: 'Academics', sectionHref: '/subjects', label: 'Subjects' },
+            finance: { section: 'Finance', sectionHref: '/finance', label: 'Fee Management' },
+            fees: { section: 'Finance', sectionHref: '/fees', label: 'Fee Management' },
+            invoices: { section: 'Finance', sectionHref: '/invoices', label: 'Invoices' },
+            payments: { section: 'Finance', sectionHref: '/payments', label: 'Payments' },
+            roles: { section: 'Settings', sectionHref: '/roles', label: 'Roles & Permissions' },
+            permissions: { section: 'Settings', sectionHref: '/permissions', label: 'Permissions' },
+            'school-setup': { section: 'Settings', sectionHref: '/school-setup', label: 'School Setup' },
+            reports: { section: 'Reporting', sectionHref: '/reports', label: 'Reports' },
+            calendar: { section: 'School Life', sectionHref: '/calendar', label: 'Calendar' },
+            profile: { section: 'Account', sectionHref: '/profile', label: 'Profile' },
+        };
+
+        const match = sectionMap[first];
+        if (match) {
+            const crumbs: BreadcrumbItem[] = [{ label: match.section, href: match.sectionHref }];
+            if (segments.length === 1) {
+                crumbs.push({ label: match.label });
+            } else {
+                crumbs.push({ label: match.label, href: match.sectionHref });
+                const sub = segments.slice(1).map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+                crumbs.push({ label: sub });
+            }
+            return crumbs;
+        }
+
+        return segments.map((seg, i) => ({
+            label: seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, ' '),
+            href: i < segments.length - 1 ? '/' + segments.slice(0, i + 1).join('/') : undefined,
+        }));
+    }, [pageUrl]);
+
+    const activeBreadcrumbs = breadcrumbs && breadcrumbs.length > 0 ? breadcrumbs : defaultBreadcrumbs;
+
+    const hasSchool = Boolean(user?.school_id);
     const rawRoles = user?.roles ?? [];
     const roles = useMemo(
         () => (Array.isArray(rawRoles) ? rawRoles : []).map((r) => String(r)),
@@ -63,30 +128,73 @@ export default function AuthenticatedLayout({
         [rawPerms],
     );
 
-    const isOperationalLead = roles.some((role) =>
-        ['super_admin', 'school_director', 'school_admin', 'teacher', 'accountant'].includes(role),
-    );
-    const canCaptureAttendance = roles.some((role) =>
-        ['super_admin', 'school_director', 'school_admin', 'teacher'].includes(role),
-    );
+    const isSuperAdmin = roles.includes('super_admin');
+    const isSchoolAdmin = roles.includes('school_admin') || roles.includes('school_director');
+    const isTeacher = roles.includes('teacher');
+    const isAccountant = roles.includes('accountant');
     const isParent = roles.includes('parent');
 
-    const adminLikeRoles = ['super_admin', 'school_director', 'school_admin'];
-    const canViewUsers =
-        permissions.includes('users.view') || roles.some((r) => adminLikeRoles.includes(r));
-    const canCreateUsers =
-        permissions.includes('users.create') || roles.some((r) => adminLikeRoles.includes(r));
-    const canManageRoles =
-        permissions.includes('roles.manage') ||
-        roles.includes('super_admin') ||
-        roles.includes('school_director');
+    const isOperationalLead = hasSchool && (isSchoolAdmin || isTeacher || isAccountant);
 
-    const isSuperAdmin = roles.includes('super_admin');
-    const canViewAuditLogs = capabilities?.can_view_audit_logs ?? isSuperAdmin;
+    const hasPerm = (p: string) => permissions.includes(p);
+
+    const canViewUsers = hasPerm('users.view') || isSuperAdmin || (hasSchool && isSchoolAdmin);
+    const canCreateUsers = hasPerm('users.create') || isSuperAdmin || (hasSchool && isSchoolAdmin);
+    const canManageRoles =
+        hasPerm('roles.manage') || isSuperAdmin || (hasSchool && roles.includes('school_director'));
+    const canViewAuditLogs = capabilities?.can_view_audit_logs ?? (isSuperAdmin || hasPerm('audit.view'));
+
+    // Operational school modules (strictly require hasSchool = true)
+    const canViewFinance =
+        hasSchool &&
+        (hasPerm('finance.view') || hasPerm('finance.manage') || isAccountant || isSchoolAdmin);
+    const canManageFinance =
+        hasSchool && (hasPerm('finance.manage') || isAccountant || isSchoolAdmin);
+    const canViewStudents =
+        hasSchool &&
+        (hasPerm('students.view') || isTeacher || isSchoolAdmin || isAccountant || roles.includes('registrar'));
+    const canCreateStudents =
+        hasSchool && (hasPerm('students.create') || isSchoolAdmin || roles.includes('registrar'));
+    const canEditStudents =
+        hasSchool && (hasPerm('students.edit') || isSchoolAdmin || roles.includes('registrar'));
+    const canManageAdmissions =
+        hasSchool && (hasPerm('admissions.manage') || isSchoolAdmin || roles.includes('registrar'));
+    const canCaptureAttendance =
+        hasSchool &&
+        (hasPerm('attendance.view') || hasPerm('attendance.manage') || isTeacher || isSchoolAdmin);
+    const canViewAcademics =
+        hasSchool &&
+        (hasPerm('assessments.view') ||
+            hasPerm('academics.classes.manage') ||
+            isTeacher ||
+            isSchoolAdmin);
+    const canManageAcademics =
+        hasSchool && (hasPerm('assessments.manage') || isTeacher || isSchoolAdmin);
+    const canViewSchoolSetup =
+        hasSchool && (hasPerm('school_setup.view') || hasPerm('school.manage') || isSchoolAdmin);
+    const canViewCommunication =
+        hasSchool && (hasPerm('communication.manage') || isSchoolAdmin || isTeacher);
+    const canViewLibrary =
+        hasSchool &&
+        (hasPerm('library.view') ||
+            hasPerm('library.manage') ||
+            roles.includes('librarian') ||
+            isSchoolAdmin);
+    const canViewHealth =
+        hasSchool &&
+        (hasPerm('health.view') ||
+            hasPerm('health.manage') ||
+            roles.includes('nurse') ||
+            isSchoolAdmin);
+    const canViewDiscipline = hasSchool && (isSchoolAdmin || isTeacher);
+    const canViewStaff = hasSchool && isSchoolAdmin;
+    const canViewSettings = hasSchool && (hasPerm('settings.manage') || isSchoolAdmin);
 
     const navCtx = useMemo<NavContext>(
         () => ({
             roles,
+            permissions,
+            hasSchool,
             isSuperAdmin,
             isOperationalLead,
             canViewUsers,
@@ -94,11 +202,28 @@ export default function AuthenticatedLayout({
             canManageRoles,
             canViewAuditLogs,
             canCaptureAttendance,
+            canViewFinance,
+            canManageFinance,
+            canViewStudents,
+            canCreateStudents,
+            canEditStudents,
+            canManageAdmissions,
+            canViewAcademics,
+            canManageAcademics,
+            canViewSchoolSetup,
+            canViewCommunication,
+            canViewLibrary,
+            canViewHealth,
+            canViewDiscipline,
+            canViewStaff,
+            canViewSettings,
             isParent,
             offlineAttendanceReady: !!capabilities?.offline_attendance_ready,
         }),
         [
             roles,
+            permissions,
+            hasSchool,
             isSuperAdmin,
             isOperationalLead,
             canViewUsers,
@@ -106,6 +231,21 @@ export default function AuthenticatedLayout({
             canManageRoles,
             canViewAuditLogs,
             canCaptureAttendance,
+            canViewFinance,
+            canManageFinance,
+            canViewStudents,
+            canCreateStudents,
+            canEditStudents,
+            canManageAdmissions,
+            canViewAcademics,
+            canManageAcademics,
+            canViewSchoolSetup,
+            canViewCommunication,
+            canViewLibrary,
+            canViewHealth,
+            canViewDiscipline,
+            canViewStaff,
+            canViewSettings,
             isParent,
             capabilities?.offline_attendance_ready,
         ],
@@ -219,26 +359,42 @@ export default function AuthenticatedLayout({
             title={collapsed ? item.name : undefined}
             onClick={() => setMobileOpen(false)}
             className={cn(
-                'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
+                'group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium transition-all duration-150',
                 item.isActive
-                    ? 'bg-primary/10 text-primary shadow-sm'
-                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                collapsed && 'justify-center px-2',
+                    ? 'bg-blue-50/90 text-blue-600 font-semibold dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white',
+                collapsed && 'justify-center px-2 py-2',
             )}
         >
-            <item.icon className="h-4 w-4 shrink-0" />
+            <item.icon
+                className={cn(
+                    'h-4 w-4 shrink-0 transition-colors',
+                    item.isActive
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200',
+                )}
+            />
             {!collapsed && (
                 <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                     <span className="truncate">{item.name}</span>
-                    {item.highlight ? (
-                        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                    {item.name.toLowerCase().includes('application') ||
+                    item.name.toLowerCase().includes('admission') ? (
+                        <span className="shrink-0 rounded bg-[#fce7f3] px-1.5 py-0.5 text-[9px] font-bold text-pink-700 dark:bg-pink-950/60 dark:text-pink-300">
+                            4
+                        </span>
+                    ) : item.highlight ? (
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.2 text-[8px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                             Offline
                         </span>
                     ) : null}
                 </span>
             )}
-            {collapsed && item.highlight ? (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-emerald-500" />
+            {collapsed &&
+            (item.name.toLowerCase().includes('application') ||
+                item.name.toLowerCase().includes('admission')) ? (
+                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-pink-500" />
+            ) : collapsed && item.highlight ? (
+                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
             ) : null}
         </Link>
     );
@@ -246,7 +402,7 @@ export default function AuthenticatedLayout({
     const renderBranch = (branch: ResolvedNavBranch, collapsed: boolean) => {
         if (collapsed) {
             return (
-                <div key={branch.id} className="space-y-1 px-2">
+                <div key={branch.id} className="space-y-1">
                     {branch.children.map((child) => (
                         <div key={child.href + child.name} className="relative">
                             {renderNavLink(child, true)}
@@ -259,18 +415,18 @@ export default function AuthenticatedLayout({
         const isOpen = openBranches[branch.id] ?? false;
 
         return (
-            <div key={branch.id} className="px-2">
+            <div key={branch.id} className="space-y-0.5">
                 <button
                     type="button"
                     onClick={() => toggleBranch(branch.id)}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
                 >
-                    <branch.icon className="h-4 w-4 shrink-0 opacity-80" />
+                    <branch.icon className="h-4 w-4 shrink-0 text-slate-400 opacity-80" />
                     <span className="flex-1 truncate">{branch.name}</span>
                     {isOpen ? (
-                        <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
+                        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     ) : (
-                        <ChevronRight className="h-4 w-4 shrink-0 opacity-70" />
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     )}
                 </button>
                 <div
@@ -280,7 +436,7 @@ export default function AuthenticatedLayout({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <div className="ml-2 space-y-0.5 border-l border-sidebar-border py-1 pl-3">
+                        <div className="ml-2 space-y-0.5 border-l border-slate-200 py-1 pl-2.5 dark:border-border">
                             {branch.children.map((child) => (
                                 <div key={child.href + child.name} className="relative">
                                     {renderNavLink(child, false)}
@@ -298,7 +454,7 @@ export default function AuthenticatedLayout({
             return renderBranch(item, collapsed);
         }
         return (
-            <div key={item.href + item.name} className="space-y-1 px-2">
+            <div key={item.href + item.name} className="space-y-0.5">
                 <div className="relative">{renderNavLink(item, collapsed)}</div>
             </div>
         );
@@ -307,7 +463,7 @@ export default function AuthenticatedLayout({
     const unread = demoNotifications.filter((n) => n.unread).length;
 
     return (
-        <div className="flex min-h-screen bg-muted/40">
+        <div className="flex min-h-screen bg-slate-50/60 dark:bg-background text-[13px]">
             {mobileOpen ? (
                 <button
                     type="button"
@@ -319,89 +475,131 @@ export default function AuthenticatedLayout({
 
             <aside
                 className={cn(
-                    'fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-lg transition-[transform,width] duration-200 ease-out md:sticky md:top-0 md:z-30 md:w-64 md:translate-x-0 md:shadow-none',
+                    'fixed inset-y-0 left-0 z-50 flex h-screen w-56 shrink-0 flex-col border-r border-slate-200 bg-white text-slate-800 transition-[transform,width] duration-200 ease-out md:sticky md:top-0 md:z-30 md:w-56 md:translate-x-0 dark:border-border dark:bg-card dark:text-card-foreground',
                     mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-                    !sidebarExpanded && 'md:w-[4.5rem]',
+                    !sidebarExpanded && 'md:w-16',
                 )}
             >
-                <div className="flex items-center justify-between border-b border-sidebar-border p-4">
+                {/* Brand Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 px-3.5 py-3 dark:border-border">
                     <Link
                         href="/"
                         className={cn(
-                            'flex min-w-0 items-center gap-3',
+                            'flex min-w-0 items-center gap-2.5',
                             !sidebarExpanded && 'md:flex-1 md:justify-center',
                         )}
                         onClick={() => setMobileOpen(false)}
                     >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-md">
-                            NG
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
+                            <School className="h-4 w-4" />
                         </span>
                         {sidebarExpanded ? (
-                            <div className="min-w-0 md:block">
-                                <p className="truncate text-sm font-bold tracking-tight">
-                                    NextGen Schools
+                            <div className="min-w-0">
+                                <p className="truncate text-[15px] font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                                    Schooling
                                 </p>
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">
-                                    Enterprise ERP
+                                <p className="text-[7.5px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase leading-none mt-0.5">
+                                    MANAGEMENT PORTAL
                                 </p>
                             </div>
                         ) : null}
                     </Link>
                     <button
                         type="button"
-                        className="rounded-lg p-2 text-muted-foreground hover:bg-sidebar-accent md:hidden"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 md:hidden dark:hover:bg-slate-800"
                         onClick={() => setMobileOpen(false)}
                     >
-                        <X className="h-5 w-5" />
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
-                <nav className="flex flex-1 flex-col gap-2 overflow-y-auto py-3">
+                {/* Section Eyebrow */}
+                {sidebarExpanded && (
+                    <div className="px-4 pt-3 pb-1 text-[8.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        WORKSPACE
+                    </div>
+                )}
+
+                {/* Nav Links */}
+                <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-1">
                     {sidebarExpanded
                         ? navItems.map((item) => renderTopNav(item, false))
                         : navFlat.map((leaf) => (
-                              <div key={leaf.href + leaf.name} className="px-2">
+                              <div key={leaf.href + leaf.name} className="relative">
                                   {renderNavLink(leaf, true)}
                               </div>
                           ))}
                 </nav>
 
-                <div className="border-t border-sidebar-border p-3">
-                    <div
-                        className={cn(
-                            'rounded-xl border border-sidebar-border bg-card p-4 text-card-foreground shadow-sm',
-                            !sidebarExpanded &&
-                                'md:flex md:flex-col md:items-center md:p-2 md:text-center',
-                        )}
-                    >
-                        <p
-                            className={cn(
-                                'text-[10px] font-bold uppercase tracking-widest text-muted-foreground',
-                                !sidebarExpanded && 'md:sr-only',
-                            )}
-                        >
-                            Active tenant
-                        </p>
-                        {sidebarExpanded ? (
-                            <p
-                                className="mt-1 truncate text-sm font-bold"
-                                title={user?.school?.name ?? 'Platform scope'}
-                            >
-                                {user?.school?.name ?? 'Platform scope'}
-                            </p>
-                        ) : (
-                            <div
-                                className="mt-1 flex justify-center md:mt-0"
-                                title={user?.school?.name ?? 'Platform scope'}
-                            >
-                                <Globe className="h-5 w-5 text-primary" aria-hidden />
+                {/* Sidebar Bottom Widgets */}
+                <div className="mt-auto border-t border-slate-100 p-2.5 dark:border-border">
+                    {sidebarExpanded ? (
+                        <div className="mb-2.5 overflow-hidden rounded-xl border border-amber-200/80 bg-[#fef3c7] p-3 text-center dark:border-amber-900/40 dark:bg-amber-950/30">
+                            <div className="mb-2 flex items-center justify-center -space-x-1.5">
+                                <span className="inline-block h-6 w-6 rounded-full border-2 border-[#fef3c7] bg-slate-300 bg-[url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces')] bg-cover" />
+                                <span className="inline-block h-6 w-6 rounded-full border-2 border-[#fef3c7] bg-slate-300 bg-[url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=faces')] bg-cover" />
+                                <span className="inline-block h-6 w-6 rounded-full border-2 border-[#fef3c7] bg-slate-300 bg-[url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop&crop=faces')] bg-cover" />
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#fef3c7] bg-white text-[8px] font-bold text-amber-950 shadow-2xs">
+                                    +8
+                                </span>
                             </div>
-                        )}
-                        {user?.school?.timezone && sidebarExpanded ? (
-                            <p className="mt-1 text-xs font-medium text-muted-foreground">
-                                TZ · {user.school.timezone}
+                            <h4 className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-950 dark:text-amber-200">
+                                <Sparkles className="h-3 w-3 text-amber-600" /> A brighter school day
+                            </h4>
+                            <p className="my-1 text-[10px] leading-tight text-amber-800/90 dark:text-amber-300/80">
+                                Your school. Your people.<br />All in one place.
                             </p>
-                        ) : null}
+                            <Link
+                                href="/school-setup"
+                                className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md border border-amber-300/60 bg-white px-2 py-1 text-[10px] font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-amber-50 dark:bg-card dark:text-foreground"
+                            >
+                                School insights
+                                <ArrowRight className="h-3 w-3 text-slate-500" />
+                            </Link>
+                        </div>
+                    ) : null}
+
+                    {/* Settings Link */}
+                    <div className="space-y-0.5">
+                        <Link
+                            href="/school-setup"
+                            className={cn(
+                                'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white',
+                                !sidebarExpanded && 'justify-center px-2',
+                            )}
+                            title="Settings"
+                        >
+                            <Settings className="h-4 w-4 shrink-0 text-slate-400" />
+                            {sidebarExpanded && <span>Settings</span>}
+                        </Link>
+                    </div>
+
+                    {/* School Switcher Badge */}
+                    <div className="mt-2 border-t border-slate-100 pt-2 dark:border-border">
+                        <div
+                            className={cn(
+                                'flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50',
+                                !sidebarExpanded && 'justify-center p-1',
+                            )}
+                            title={user?.school?.name ?? 'St. Jude Academy'}
+                        >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-xs font-black text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                {user?.school?.name ? user.school.name.charAt(0).toUpperCase() : 'S'}
+                            </span>
+                            {sidebarExpanded ? (
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                                        {user?.school?.name ?? 'St. Jude Academy'}
+                                    </p>
+                                    <p className="text-[9px] font-medium text-slate-400 leading-tight mt-0.5">
+                                        2026 - 2027
+                                    </p>
+                                </div>
+                            ) : null}
+                            {sidebarExpanded && (
+                                <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -409,11 +607,11 @@ export default function AuthenticatedLayout({
                     type="button"
                     title="Collapse sidebar"
                     onClick={toggleSidebar}
-                    className="absolute -right-3 top-20 hidden h-8 w-8 items-center justify-center rounded-full border border-sidebar-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-muted md:flex"
+                    className="absolute -right-3 top-16 hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-xs hover:bg-slate-50 hover:text-slate-900 md:flex dark:border-border dark:bg-card"
                 >
                     <PanelLeft
                         className={cn(
-                            'h-4 w-4 transition-transform',
+                            'h-3.5 w-3.5 transition-transform',
                             !sidebarExpanded && 'rotate-180',
                         )}
                     />
@@ -520,14 +718,18 @@ export default function AuthenticatedLayout({
                             <Dropdown.Trigger>
                                 <button
                                     type="button"
-                                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-2 py-1.5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted sm:px-3"
+                                    className="inline-flex items-center gap-2.5 rounded-full p-1 pr-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-800"
                                 >
-                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
-                                        {initials}
-                                    </span>
-                                    <span className="hidden max-w-[10rem] truncate sm:inline">
-                                        Account
-                                    </span>
+                                    <UserAvatar name={user?.name} initials={initials} size="sm" />
+                                    <div className="hidden text-left sm:block">
+                                        <p className="truncate text-xs font-bold text-slate-800 dark:text-white leading-tight">
+                                            {user?.name ?? 'User'}
+                                        </p>
+                                        <p className="text-[10px] font-medium text-slate-400 capitalize leading-tight mt-0.5">
+                                            {roles[0]?.replace(/_/g, ' ') ?? 'Administrator'}
+                                        </p>
+                                    </div>
+                                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                                 </button>
                             </Dropdown.Trigger>
                             <Dropdown.Content align="right" width="48">
@@ -565,7 +767,34 @@ export default function AuthenticatedLayout({
                     </div>
                 ) : null}
 
-                <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+                <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+                    {/* Page Path Breadcrumbs (Schoolname / Section / Page) */}
+                    <nav aria-label="Breadcrumb" className="mb-3.5 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+                        <Link
+                            href="/dashboard"
+                            className="font-semibold text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                        >
+                            {schoolName}
+                        </Link>
+                        {activeBreadcrumbs.map((crumb, idx) => (
+                            <Fragment key={idx}>
+                                <span className="text-slate-300 dark:text-slate-600 font-normal">/</span>
+                                {crumb.href ? (
+                                    <Link
+                                        href={crumb.href}
+                                        className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                                    >
+                                        {crumb.label}
+                                    </Link>
+                                ) : (
+                                    <span className="font-semibold text-slate-900 dark:text-white">
+                                        {crumb.label}
+                                    </span>
+                                )}
+                            </Fragment>
+                        ))}
+                    </nav>
+
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentRoute + pageUrl}

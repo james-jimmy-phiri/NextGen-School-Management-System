@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admission;
+use App\Models\DocumentSequence;
 use App\Models\School;
+use App\Services\DocumentNumberService;
 use App\Support\SchoolBranding;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class PublicAdmissionController extends Controller
@@ -70,7 +71,8 @@ class PublicAdmissionController extends Controller
             }
         }
 
-        $referenceNumber = $this->generateReferenceNumber();
+        $referenceNumber = app(DocumentNumberService::class)
+            ->next((int) $validated['school_id'], DocumentSequence::TYPE_APPLICATION);
 
         Admission::create([
             'school_id' => $validated['school_id'],
@@ -127,12 +129,4 @@ class PublicAdmissionController extends Controller
         ]);
     }
 
-    protected function generateReferenceNumber(): string
-    {
-        do {
-            $referenceNumber = 'APP-' . date('Y') . '-' . strtoupper(Str::random(6));
-        } while (Admission::where('reference_number', $referenceNumber)->exists());
-
-        return $referenceNumber;
-    }
 }

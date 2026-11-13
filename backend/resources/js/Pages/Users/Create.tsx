@@ -2,18 +2,42 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import { Badge } from '@/Components/ui/Badge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { cn } from '@/lib/utils';
 import { PageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { Check, Info, Shield, Building2 } from 'lucide-react';
+import { FormEventHandler, useMemo } from 'react';
+
+export type RoleItem = {
+    id?: number;
+    name: string;
+    requires_school?: boolean;
+};
 
 interface Props extends PageProps {
-    roles: string[];
+    roles: (RoleItem | string)[];
     schools: { id: number; name: string }[];
 }
 
 export default function UsersCreate({ roles, schools }: Props) {
+    const normalizedRoles = useMemo<RoleItem[]>(() => {
+        return (roles ?? []).map((r) => {
+            if (typeof r === 'string') {
+                return {
+                    name: r,
+                    requires_school: r !== 'super_admin',
+                };
+            }
+            return {
+                id: r.id,
+                name: r.name,
+                requires_school: r.requires_school ?? (r.name !== 'super_admin'),
+            };
+        });
+    }, [roles]);
+
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -21,9 +45,33 @@ export default function UsersCreate({ roles, schools }: Props) {
         password: '',
         password_confirmation: '',
         role: '',
+        roles: [] as string[],
         school_id: '',
         status: 'active' as 'active' | 'inactive' | 'suspended',
     });
+
+    // Check whether currently selected roles require a school assignment
+    const requiresSchool = useMemo(() => {
+        const activeRoleNames = data.roles.length > 0 ? data.roles : (data.role ? [data.role] : []);
+        if (activeRoleNames.length === 0) {
+            return false;
+        }
+        return activeRoleNames.some((roleName) => {
+            const found = normalizedRoles.find((r) => r.name === roleName);
+            return found ? (found.requires_school ?? (found.name !== 'super_admin')) : true;
+        });
+    }, [data.roles, data.role, normalizedRoles]);
+
+    const toggleRole = (roleName: string) => {
+        const current = [...data.roles];
+        const exists = current.includes(roleName);
+        const next = exists ? current.filter((r) => r !== roleName) : [...current, roleName];
+        setData({
+            ...data,
+            roles: next,
+            role: next[0] ?? '',
+        });
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -40,7 +88,7 @@ export default function UsersCreate({ roles, schools }: Props) {
                         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Users</p>
                         <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">Add user</h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Create an account and assign a single primary role. Permissions come from that role.
+                            Create an account and assign roles. A user can have one or more roles (e.g. Class Teacher and Exam Officer).
                         </p>
                     </div>
                     <Link
@@ -59,7 +107,7 @@ export default function UsersCreate({ roles, schools }: Props) {
                 >
                     <div className="grid gap-6 sm:grid-cols-2">
                         <div>
-                            <InputLabel htmlFor="name" value="Full name" />
+                            <InputLabel htmlFor="name" value="Full name *" />
                             <TextInput
                                 id="name"
                                 className="mt-2 block w-full"
@@ -70,7 +118,7 @@ export default function UsersCreate({ roles, schools }: Props) {
                             <InputError className="mt-2" message={errors.name} />
                         </div>
                         <div>
-                            <InputLabel htmlFor="email" value="Email" />
+                            <InputLabel htmlFor="email" value="Email address *" />
                             <TextInput
                                 id="email"
                                 type="email"
@@ -95,74 +143,7 @@ export default function UsersCreate({ roles, schools }: Props) {
                             <InputError className="mt-2" message={errors.phone} />
                         </div>
                         <div>
-                            <InputLabel htmlFor="role" value="Role" />
-                            <select
-                                id="role"
-                                className="mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                                value={data.role}
-                                onChange={(e) => setData('role', e.target.value)}
-                                required
-                            >
-                                <option value="">Select role</option>
-                                {roles.map((role) => (
-                                    <option key={role} value={role}>
-                                        {role.replace(/_/g, ' ')}
-                                    </option>
-                                ))}
-                            </select>
-                            <InputError className="mt-2" message={errors.role} />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-6 sm:grid-cols-2">
-                        <div>
-                            <InputLabel htmlFor="password" value="Password" />
-                            <TextInput
-                                id="password"
-                                type="password"
-                                className="mt-2 block w-full"
-                                value={data.password}
-                                onChange={(e) => setData('password', e.target.value)}
-                                required
-                            />
-                            <InputError className="mt-2" message={errors.password} />
-                        </div>
-                        <div>
-                            <InputLabel htmlFor="password_confirmation" value="Confirm password" />
-                            <TextInput
-                                id="password_confirmation"
-                                type="password"
-                                className="mt-2 block w-full"
-                                value={data.password_confirmation}
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-6 sm:grid-cols-2">
-                        {schools.length > 0 ? (
-                            <div>
-                                <InputLabel htmlFor="school_id" value="School" />
-                                <select
-                                    id="school_id"
-                                    className="mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                                    value={data.school_id}
-                                    onChange={(e) => setData('school_id', e.target.value)}
-                                    required
-                                >
-                                    <option value="">Select school</option>
-                                    {schools.map((s) => (
-                                        <option key={s.id} value={s.id}>
-                                            {s.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <InputError className="mt-2" message={errors.school_id} />
-                            </div>
-                        ) : null}
-                        <div>
-                            <InputLabel htmlFor="status" value="Status" />
+                            <InputLabel htmlFor="status" value="Status *" />
                             <select
                                 id="status"
                                 className="mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -180,6 +161,129 @@ export default function UsersCreate({ roles, schools }: Props) {
                         </div>
                     </div>
 
+                    {/* FR4.7: Assign User Roles (Multi-Role selection) */}
+                    <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <div>
+                                <InputLabel value="Assigned Roles * (Select all that apply)" />
+                                <p className="text-xs text-muted-foreground">
+                                    Assign single or multiple functional roles (FR4.7).
+                                </p>
+                            </div>
+                            {data.roles.length > 0 && (
+                                <span className="text-xs font-semibold text-primary">
+                                    {data.roles.length} role{data.roles.length > 1 ? 's' : ''} selected
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 pt-1">
+                            {normalizedRoles.map((role) => {
+                                const checked = data.roles.includes(role.name);
+                                return (
+                                    <label
+                                        key={role.name}
+                                        className={cn(
+                                            'flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-xs transition-colors',
+                                            checked
+                                                ? 'border-primary/50 bg-primary/10 text-foreground font-semibold'
+                                                : 'border-border bg-card text-muted-foreground hover:bg-muted/50'
+                                        )}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="mt-0.5 rounded border-border text-primary focus:ring-primary h-3.5 w-3.5"
+                                            checked={checked}
+                                            onChange={() => toggleRole(role.name)}
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="capitalize text-foreground">{role.name.replace(/_/g, ' ')}</p>
+                                            <p className="text-[10px] text-muted-foreground">
+                                                {role.requires_school ? 'Requires school' : 'Platform / No school'}
+                                            </p>
+                                        </div>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        <InputError className="mt-2" message={errors.role || (errors as any).roles} />
+                    </div>
+
+                    {/* Password Fields */}
+                    <div className="grid gap-6 sm:grid-cols-2">
+                        <div>
+                            <InputLabel htmlFor="password" value="Password *" />
+                            <TextInput
+                                id="password"
+                                type="password"
+                                className="mt-2 block w-full"
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                required
+                            />
+                            <InputError className="mt-2" message={errors.password} />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="password_confirmation" value="Confirm password *" />
+                            <TextInput
+                                id="password_confirmation"
+                                type="password"
+                                className="mt-2 block w-full"
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    {/* School Assignment (Optional for Super Admin / System roles, Mandatory for school roles) */}
+                    {schools.length > 0 && (
+                        <div className="rounded-xl border border-border p-4 bg-card space-y-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-primary" />
+                                    <InputLabel
+                                        htmlFor="school_id"
+                                        value={requiresSchool ? 'School Assignment *' : 'School Assignment (Optional)'}
+                                    />
+                                </div>
+                                {requiresSchool ? (
+                                    <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-700 bg-amber-500/10">
+                                        Mandatory for selected role(s)
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-700 bg-emerald-500/10">
+                                        Optional for system/platform roles
+                                    </Badge>
+                                )}
+                            </div>
+
+                            <p className="text-xs text-muted-foreground">
+                                {requiresSchool
+                                    ? 'A school must be selected because one or more selected roles require school scoping.'
+                                    : 'Platform administrators and system roles do not require school assignment.'}
+                            </p>
+
+                            <select
+                                id="school_id"
+                                className="mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                                value={data.school_id}
+                                onChange={(e) => setData('school_id', e.target.value)}
+                                required={requiresSchool}
+                            >
+                                <option value="">
+                                    {requiresSchool ? '— Select a school * —' : 'No school (Platform / System-wide)'}
+                                </option>
+                                {schools.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError className="mt-2" message={errors.school_id} />
+                        </div>
+                    )}
+
                     <div className="flex justify-end gap-3 border-t border-border pt-6">
                         <Link
                             href={route('users.index')}
@@ -187,7 +291,7 @@ export default function UsersCreate({ roles, schools }: Props) {
                         >
                             Cancel
                         </Link>
-                        <PrimaryButton type="submit" disabled={processing}>
+                        <PrimaryButton type="submit" disabled={processing || data.roles.length === 0}>
                             Create user
                         </PrimaryButton>
                     </div>

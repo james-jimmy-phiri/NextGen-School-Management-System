@@ -10,6 +10,8 @@ use App\Models\Student;
 use App\Models\Term;
 use App\Models\User;
 use App\Models\Guardian;
+use App\Models\DocumentSequence;
+use App\Services\DocumentNumberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -28,13 +30,34 @@ class StudentController extends Controller
         $user = $request->user();
 
         $students = Student::query()
-            ->with(['guardians', 'enrollments.classGroup'])
+            ->with(['guardians', 'enrollments.classGroup', 'enrollments.academicYear', 'family'])
             ->when(! $user->isSuperAdmin(), fn ($query) => $query->where('school_id', $user->school_id))
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = '%'.$request->string('search').'%';
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('first_name', 'like', $search)
+                        ->orWhere('last_name', 'like', $search)
+                        ->orWhere('admission_number', 'like', $search)
+                        ->orWhereHas('guardians', fn ($g) => $g->where('first_name', 'like', $search)
+                            ->orWhere('last_name', 'like', $search)
+                            ->orWhere('phone', 'like', $search));
+                });
+            })
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->when($request->filled('class_group_id'), function ($query) use ($request) {
+                $query->whereHas('enrollments', fn ($e) => $e->where('class_group_id', $request->integer('class_group_id')));
+            })
             ->latest()
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
         return Inertia::render('Students/Index', [
             'students' => $students,
+            'filters' => $request->only(['search', 'status', 'class_group_id']),
+            'classGroups' => ClassGroup::query()
+                ->when(! $user->isSuperAdmin(), fn ($q) => $q->where('school_id', $user->school_id))
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
@@ -61,7 +84,7 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'school_id' => ['required', 'exists:schools,id'],
-            'admission_number' => ['required', 'string', 'max:50'],
+            'admission_number' => ['nullable', 'string', 'max:50'],
             'national_id_passport' => ['nullable', 'string', 'max:100'],
             'first_name' => ['required', 'string', 'max:255'],
             'middle_name' => ['nullable', 'string', 'max:255'],
@@ -160,11 +183,14 @@ class StudentController extends Controller
                 $studentUser->assignRole('student');
             }
 
+            $admissionNumber = $validated['admission_number'] ?: app(DocumentNumberService::class)
+                ->next((int) $validated['school_id'], DocumentSequence::TYPE_ADMISSION);
+
             $student = Student::create([
                 'school_id' => $validated['school_id'],
                 'user_id' => $studentUser ? $studentUser->id : null,
                 'registration_number' => $registrationNumber,
-                'admission_number' => $validated['admission_number'],
+                'admission_number' => $admissionNumber,
                 'national_id_passport' => $validated['national_id_passport'],
                 'first_name' => $validated['first_name'],
                 'middle_name' => $validated['middle_name'],
@@ -220,7 +246,7 @@ class StudentController extends Controller
                             'email' => $guardianData['email'],
                             'phone' => $guardianData['phone'],
                             'password' => Hash::make(Str::random(8)),
-                            'status' => 'active',
+                            'status' => 'inactive',
                         ]);
                         $guardianUser->assignRole('parent');
                     }
@@ -288,7 +314,7 @@ class StudentController extends Controller
     {
         $this->authorize('view', $student);
 
-        $student->load(['guardians', 'enrollments.classGroup', 'enrollments.academicYear']);
+        $student->load(['guardians', 'enrollments.classGroup', 'enrollments.academicYear', 'family', 'responsibleGuardian', 'transfers']);
 
         return Inertia::render('Students/Show', [
             'student' => $student,
@@ -315,7 +341,10 @@ class StudentController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'gender' => ['required', Rule::in(['male', 'female', 'other'])],
             'date_of_birth' => ['required', 'date'],
-            'status' => ['required', Rule::in(['active', 'inactive', 'graduated', 'suspended'])],
+            'status' => ['required', Rule::in(['applicant', 'active', 'suspended', 'transferred', 'withdrawn', 'graduated'])],
+            'status_reason' => ['nullable', 'string', 'max:255'],
+            'family_id' => ['nullable', 'exists:families,id'],
+            'responsible_guardian_id' => ['nullable', 'exists:guardians,id'],
         ]);
 
         $student->update($validated);

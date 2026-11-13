@@ -18,15 +18,19 @@ class EnsureUserIsActive
     {
         $user = $request->user();
 
-        if ($user && $user->status !== 'active') {
+        if ($user && (! $user->isActive())) {
             Auth::logout();
 
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            $message = $user->status === 'suspended'
-                ? 'Your account has been suspended. Please contact the administrator.'
-                : 'Your account is inactive.';
+            $message = $user->isLocked()
+                ? 'Your account is locked after too many failed sign-in attempts. An administrator must unlock it.'
+                : ($user->isDeactivated()
+                    ? ('Your account has been deactivated. '.($user->deactivated_reason ? 'Reason: '.$user->deactivated_reason : 'Please contact your administrator.'))
+                    : ($user->status === 'suspended'
+                        ? 'Your account has been suspended. Please contact the administrator.'
+                        : 'Your account is inactive.'));
 
             return redirect()->route('login')->with('status', $message);
         }

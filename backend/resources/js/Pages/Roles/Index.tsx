@@ -19,6 +19,7 @@ interface Role {
     name: string;
     permissions: string[];
     is_system: boolean;
+    requires_school?: boolean;
     users_count: number;
 }
 
@@ -114,42 +115,46 @@ export default function RolesIndex({ roles, permissionsByModule }: Props) {
         router.delete(route('roles.destroy', role.id));
     };
 
+    const breadcrumbs = [
+        { label: 'Settings', href: '/roles' },
+        { label: 'Roles & Permissions' },
+    ];
+
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout breadcrumbs={breadcrumbs}>
             <Head title="Roles & permissions" />
 
-            <div className="space-y-6">
+            <div className="school-app max-w-[1560px] mx-auto pb-8 space-y-6">
                 {flash?.success ? (
-                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                    <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
                         {flash.success}
                     </div>
                 ) : null}
                 {flash?.error ? (
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-800 dark:text-red-200">
+                    <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
                         {flash.error}
                     </div>
                 ) : null}
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="page-title">
                     <div>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                            Identity & access
-                        </p>
-                        <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-                            Roles & permissions
+                        <div className="eyebrow">IDENTITY &amp; ACCESS</div>
+                        <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center">
+                            Roles &amp; Permissions <span className="title-dot" />
                         </h1>
-                        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                            Map Spatie permissions to each role. Users receive a single primary role in this
-                            module; fine-grained access is driven by the permission checkboxes below.
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            {rolesData.length} roles · Fine-grained permission assignments &amp; institutional access control
                         </p>
                     </div>
-                    <Link
-                        href={route('roles.create')}
-                        className="inline-flex shrink-0 items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
-                    >
-                        <Plus className="mr-2 h-4 w-4" aria-hidden />
-                        New role
-                    </Link>
+                    <div className="title-actions">
+                        <Link
+                            href={route('roles.create')}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                        >
+                            <Plus size={14} />
+                            <span>Add role</span>
+                        </Link>
+                    </div>
                 </div>
 
                 {!rolesData.length ? (
@@ -187,34 +192,40 @@ export default function RolesIndex({ roles, permissionsByModule }: Props) {
                                                 <p className="truncate text-sm font-semibold capitalize text-foreground">
                                                     {formatRoleLabel(role.name)}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {role.users_count} user{role.users_count === 1 ? '' : 's'}
-                                                </p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {role.users_count} user{role.users_count === 1 ? '' : 's'}
+                                                    </p>
+                                                    {role.requires_school === false ? (
+                                                        <span className="text-[10px] font-medium text-purple-700 bg-purple-500/10 dark:text-purple-300 rounded px-1.5 py-0.2">
+                                                            Platform / No school
+                                                        </span>
+                                                    ) : null}
+                                                </div>
                                             </button>
                                             <div className="flex shrink-0 items-center gap-1">
                                                 {role.is_system ? (
                                                     <Badge variant="secondary" className="text-[10px]">
                                                         System
                                                     </Badge>
-                                                ) : (
-                                                    <>
-                                                        <Link
-                                                            href={route('roles.edit', role.id)}
-                                                            className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                                                            title="Rename"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Link>
-                                                        <button
-                                                            type="button"
-                                                            title="Delete role"
-                                                            className="rounded-lg p-2 text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600"
-                                                            onClick={() => deleteRole(role)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </>
-                                                )}
+                                                ) : null}
+                                                <Link
+                                                    href={route('roles.edit', role.id)}
+                                                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                    title={role.is_system ? "Configure role" : "Edit role"}
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Link>
+                                                {!role.is_system ? (
+                                                    <button
+                                                        type="button"
+                                                        title="Delete role"
+                                                        className="rounded-lg p-2 text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600"
+                                                        onClick={() => deleteRole(role)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                ) : null}
                                             </div>
                                         </div>
                                     );

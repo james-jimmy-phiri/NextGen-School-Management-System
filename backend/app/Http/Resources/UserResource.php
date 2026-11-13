@@ -20,6 +20,10 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'status' => $this->status,
+            'locked_at' => $this->locked_at?->toDateTimeString(),
+            'locked_reason' => $this->locked_reason,
+            'deactivated_at' => $this->deactivated_at?->toDateTimeString(),
+            'deactivated_reason' => $this->deactivated_reason,
             'avatar_initials' => $this->avatar_initials,
             'last_login_at' => $this->last_login_at?->toDateTimeString(),
             'last_login_ip' => $this->last_login_ip,
@@ -28,6 +32,7 @@ class UserResource extends JsonResource
                 'name' => $this->school?->name,
             ],
             'role' => $this->roles->first()?->name,
+            'roles' => $this->getRoleNames(),
             'permissions' => $this->getPermissionNames(),
             'created_at' => $this->created_at->toDateTimeString(),
         ];

@@ -34,13 +34,16 @@ use App\Http\Requests\StoreSubjectRequest;
 use App\Http\Requests\UpdateSubjectRequest;
 use App\Http\Requests\StoreGradingSystemRequest;
 use App\Http\Requests\UpdateGradingSystemRequest;
+use App\Models\DocumentSequence;
+use App\Services\DocumentNumberService;
 
 class SchoolSetupController extends Controller
 {
     public function index(Request $request)
     {
         $schoolId = $request->user()->school_id;
-        $school = School::find($schoolId) ?? School::first();
+        abort_unless($schoolId !== null, 403, 'A school context is required for school setup.');
+        $school = School::findOrFail($schoolId);
 
         return Inertia::render('SchoolSetup/Index', [
             'school' => $school,
@@ -67,6 +70,7 @@ class SchoolSetupController extends Controller
             'grade_levels_list' => GradeLevel::where('school_id', $schoolId)->select('id', 'label')->get(),
             'class_groups_list' => ClassGroup::where('school_id', $schoolId)->select('id', 'name')->get(),
             'departments_list' => Department::where('school_id', $schoolId)->select('id', 'name')->get(),
+            'document_sequences' => $schoolId ? app(DocumentNumberService::class)->forSchool((int) $schoolId) : [],
         ]);
     }
 
@@ -76,6 +80,60 @@ class SchoolSetupController extends Controller
         $school = School::findOrFail($schoolId);
         $school->update($request->all());
         return back()->with('success', 'School profile updated successfully.');
+    }
+
+    public function updateDocumentNumbers(Request $request)
+    {
+        $schoolId = (int) $request->user()->school_id;
+        $validated = $request->validate([
+            'sequences' => ['required', 'array'],
+            'sequences.*.id' => ['required', 'integer'],
+            'sequences.*.prefix' => ['required', 'string', 'max:20'],
+            'sequences.*.include_year' => ['boolean'],
+            'sequences.*.padding' => ['required', 'integer', 'min:3', 'max:8'],
+            'sequences.*.next_number' => ['required', 'integer', 'min:1'],
+            'print_header' => ['nullable', 'string', 'max:500'],
+            'print_footer' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        foreach ($validated['sequences'] as $row) {
+            DocumentSequence::query()
+                ->where('school_id', $schoolId)
+                ->whereKey($row['id'])
+                ->update([
+                    'prefix' => $row['prefix'],
+                    'include_year' => (bool) ($row['include_year'] ?? true),
+                    'padding' => $row['padding'],
+                    'next_number' => $row['next_number'],
+                ]);
+        }
+
+        $school = School::findOrFail($schoolId);
+        $settings = $school->settings ?? [];
+        $settings['print'] = [
+            'header' => $validated['print_header'] ?? '',
+            'footer' => $validated['print_footer'] ?? '',
+        ];
+        $school->update(['settings' => $settings]);
+
+        return back()->with('success', 'Document numbering updated.');
+    }
+
+    public function updateCommunication(Request $request)
+    {
+        $school = School::findOrFail($request->user()->school_id);
+        $validated = $request->validate([
+            'sender_name' => ['nullable', 'string', 'max:80'],
+            'default_channel' => ['nullable', 'string', 'in:sms,email,push'],
+            'quiet_hours_start' => ['nullable', 'date_format:H:i'],
+            'quiet_hours_end' => ['nullable', 'date_format:H:i'],
+        ]);
+
+        $settings = $school->settings ?? [];
+        $settings['communication'] = $validated;
+        $school->update(['settings' => $settings]);
+
+        return back()->with('success', 'Communication preferences saved.');
     }
 
     // --- Academic Years ---

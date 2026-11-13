@@ -18,19 +18,16 @@ class AttendanceController extends Controller
 {
     public function index(Request $request): Response
     {
+        abort_unless($request->user()->school_id !== null, 403, 'A school context is required for student attendance.');
         abort_unless($request->user()->can('attendance.view') || $request->user()->can('attendance.manage'), 403);
 
-        $schoolId = $request->user()->isSuperAdmin() ? null : $request->user()->school_id;
+        $schoolId = $request->user()->school_id;
 
-        $latest = [];
-
-        if ($schoolId !== null) {
-            $latest = StudentAttendanceRecord::with(['student', 'attendanceSession.classGroup'])
-                ->whereHas('attendanceSession', fn ($query) => $query->where('school_id', $schoolId))
-                ->latest()
-                ->take(15)
-                ->get();
-        }
+        $latest = StudentAttendanceRecord::with(['student', 'attendanceSession.classGroup'])
+            ->whereHas('attendanceSession', fn ($query) => $query->where('school_id', $schoolId))
+            ->latest()
+            ->take(15)
+            ->get();
 
         return Inertia::render('Attendance/Index', [
             'latest' => $latest,
@@ -44,6 +41,7 @@ class AttendanceController extends Controller
 
     public function mark(Request $request)
     {
+        abort_unless($request->user()->school_id !== null, 403, 'A school context is required for student attendance.');
         abort_unless($request->user()->can('attendance.manage'), 403);
 
         $schoolId = $request->user()->school_id;

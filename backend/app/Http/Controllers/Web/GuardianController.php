@@ -34,4 +34,22 @@ class GuardianController extends Controller
             'filters' => $request->only(['search']),
         ]);
     }
+
+    public function verify(Request $request, Guardian $guardian)
+    {
+        abort_unless($request->user()->school_id === $guardian->school_id || $request->user()->isSuperAdmin(), 403);
+
+        $guardian->update([
+            'verified_at' => now(),
+            'verified_by' => $request->user()->id,
+        ]);
+
+        if ($guardian->portalUser) {
+            $guardian->portalUser->update(['status' => 'active']);
+        }
+
+        activity('guardian')->causedBy($request->user())->performedOn($guardian)->log('Verified guardian relationship');
+
+        return back()->with('success', 'Guardian verified. Portal access is now enabled.');
+    }
 }

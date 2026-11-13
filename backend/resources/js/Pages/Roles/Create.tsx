@@ -4,13 +4,14 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { cn } from '@/lib/utils';
-import { PageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Building2 } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 export default function RolesCreate() {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
+        requires_school: true,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -37,13 +38,13 @@ export default function RolesCreate() {
                     className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm"
                 >
                     <div>
-                        <InputLabel htmlFor="name" value="Role key" />
+                        <InputLabel htmlFor="name" value="Role key *" />
                         <TextInput
                             id="name"
                             className="mt-2 block w-full"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value.toLowerCase())}
-                            placeholder="e.g. deputy_registrar"
+                            placeholder="e.g. deputy_registrar, exam_officer"
                             autoComplete="off"
                             required
                         />
@@ -54,7 +55,31 @@ export default function RolesCreate() {
                         <InputError className="mt-2" message={errors.name} />
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-3">
+                    {/* Configure whether role needs mandatory school choice or not */}
+                    <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="mt-0.5 rounded border-border text-primary focus:ring-primary h-4 w-4"
+                                checked={data.requires_school}
+                                onChange={(e) => setData('requires_school', e.target.checked)}
+                            />
+                            <div>
+                                <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                                    <Building2 className="h-4 w-4 text-primary" />
+                                    School selection mandatory for this role
+                                </span>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {data.requires_school
+                                        ? 'Users assigned to this role must select a specific school.'
+                                        : 'Platform/System role: users with this role do NOT require a school assignment (school choice will be optional).'}
+                                </p>
+                            </div>
+                        </label>
+                        <InputError className="mt-1" message={(errors as any).requires_school} />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
                         <Link
                             href={route('roles.index')}
                             className={cn(

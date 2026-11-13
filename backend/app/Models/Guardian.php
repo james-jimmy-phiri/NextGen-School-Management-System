@@ -25,7 +25,21 @@ class Guardian extends Model
         'employer',
         'alternative_phone',
         'address',
+        'verified_at',
+        'verified_by',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'verified_at' => 'datetime',
+        ];
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->verified_at !== null;
+    }
 
     public function school(): BelongsTo
     {
@@ -35,6 +49,11 @@ class Guardian extends Model
     public function portalUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function verifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
     }
 
     public function students(): BelongsToMany

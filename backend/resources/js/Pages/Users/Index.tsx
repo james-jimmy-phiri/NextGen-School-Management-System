@@ -1,14 +1,27 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Card, CardContent } from '@/Components/ui/Card';
+import Modal from '@/Components/Modal';
+import InputLabel from '@/Components/InputLabel';
+import TextInput from '@/Components/TextInput';
+import SecondaryButton from '@/Components/SecondaryButton';
+import DangerButton from '@/Components/DangerButton';
+import UserAvatar from '@/Components/UserAvatar';
 import { cn } from '@/lib/utils';
 import type { AuthUser, LaravelPagination, PageProps } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { motion } from 'framer-motion';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
-import DangerButton from '@/Components/DangerButton';
+import {
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Download,
+    Eye,
+    Pencil,
+    Plus,
+    Trash2,
+    Unlock,
+    UserCheck,
+    UserX,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface User {
     id: number;
@@ -16,8 +29,13 @@ interface User {
     email: string;
     phone: string | null;
     status: 'active' | 'inactive' | 'suspended';
+    locked_at?: string | null;
+    locked_reason?: string | null;
+    deactivated_at?: string | null;
+    deactivated_reason?: string | null;
     avatar_initials: string;
-    role: string;
+    role?: string;
+    roles?: string[];
     school: { id: number; name: string } | null;
     last_login_at: string | null;
     last_login_ip?: string | null;
@@ -46,13 +64,90 @@ export default function UserIndex({ users, roles, filters }: Props) {
     const canEdit = perms.includes('users.edit') || rolesList.some((r) => adminStaff.includes(r));
     const canDelete = perms.includes('users.delete') || rolesList.includes('super_admin');
 
+    const [searchQuery, setSearchQuery] = useState(filters?.search ?? '');
+    const [selectedRole, setSelectedRole] = useState(filters?.role ?? '');
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-    const statusColors = {
-        active: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/25 dark:text-emerald-300',
-        inactive: 'bg-muted text-muted-foreground border-border',
-        suspended: 'bg-rose-500/10 text-rose-700 border-rose-500/25 dark:text-rose-300',
+    const [deactivateOpen, setDeactivateOpen] = useState(false);
+    const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
+    const [deactivateReason, setDeactivateReason] = useState('');
+    const [deactivateProcessing, setDeactivateProcessing] = useState(false);
+
+    const isTeacherView = filters?.role === 'teacher';
+    const pageTitle = isTeacherView ? 'Teachers' : 'Teachers';
+    const singular = isTeacherView ? 'teacher' : 'teacher';
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.get(
+            route('users.index'),
+            {
+                ...filters,
+                search: searchQuery || undefined,
+                role: selectedRole || undefined,
+            },
+            { preserveState: true },
+        );
+    };
+
+    const handleRoleChange = (role: string) => {
+        setSelectedRole(role);
+        router.get(
+            route('users.index'),
+            {
+                ...filters,
+                search: searchQuery || undefined,
+                role: role || undefined,
+            },
+            { preserveState: true },
+        );
+    };
+
+    const handleExport = () => {
+        const headers = ['ID', 'Name', 'Email', 'Phone', 'Role', 'Status'];
+        const csvRows = users.data.map((u) => [
+            `TCH-${String(u.id).padStart(4, '0')}`,
+            `"${u.name.replace(/"/g, '""')}"`,
+            u.email,
+            u.phone ?? '',
+            u.role ?? (u.roles?.[0] ?? 'Staff'),
+            u.status,
+        ]);
+        const csvContent =
+            'data:text/csv;charset=utf-8,' +
+            [headers.join(','), ...csvRows.map((r) => r.join(','))].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `teachers_directory_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleDeactivate = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!userToDeactivate || !deactivateReason.trim()) return;
+        setDeactivateProcessing(true);
+        router.post(
+            route('users.deactivate', userToDeactivate.id),
+            { reason: deactivateReason },
+            {
+                onSuccess: () => {
+                    setDeactivateOpen(false);
+                    setUserToDeactivate(null);
+                    setDeactivateReason('');
+                },
+                onFinish: () => setDeactivateProcessing(false),
+            },
+        );
+    };
+
+    const handleReactivate = (u: User) => {
+        if (confirm(`Reactivate user account for ${u.name}? Access will be restored using their existing credentials.`)) {
+            router.post(route('users.reactivate', u.id));
+        }
     };
 
     const confirmDelete = () => {
@@ -66,255 +161,267 @@ export default function UserIndex({ users, roles, filters }: Props) {
         }
     };
 
+    const breadcrumbs = [
+        { label: 'School Management', href: '/users' },
+        { label: pageTitle },
+    ];
+
     return (
-        <AuthenticatedLayout>
-            <Head title="Users" />
+        <AuthenticatedLayout breadcrumbs={breadcrumbs}>
+            <Head title={pageTitle} />
 
-            <div className="space-y-6">
+            <div className="school-app max-w-[1560px] mx-auto pb-8">
+                {/* ─── Flash Messages ────────────────────────────────────────────── */}
                 {flash?.success ? (
-                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-800 dark:text-emerald-200">
-                        {flash.success}
-                    </div>
-                ) : null}
-                {flash?.error ? (
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-800 dark:text-red-200">
-                        {flash.error}
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <CheckCircle2 size={15} className="text-emerald-600" />
+                        <span>{flash.success}</span>
                     </div>
                 ) : null}
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                {/* ─── Page Title Header (Stitch Design) ───────────────────── */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                            Identity & access
+                        <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1 leading-none">
+                            SCHOOL MANAGEMENT
                         </p>
-                        <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">Users</h1>
-                        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                            Staff and portal accounts for your school. Use roles to control what each person can
-                            see and do.
+                        <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+                            {pageTitle}
+                        </h1>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                            {users.total} {users.total === 1 ? singular : `${singular}s`} · 2026–2027 academic year
                         </p>
                     </div>
-                    {canCreate ? (
-                        <Link
-                            href={route('users.create')}
-                            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
+
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:bg-slate-100 transition-all cursor-pointer dark:border-border dark:bg-card dark:text-slate-200 dark:hover:bg-muted"
                         >
-                            <Plus className="h-4 w-4" aria-hidden />
-                            Add user
-                        </Link>
-                    ) : null}
+                            <Download className="h-3.5 w-3.5 text-slate-500" />
+                            <span>Export</span>
+                        </button>
+                        {canCreate ? (
+                            <Link
+                                href={route('users.create')}
+                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 active:bg-blue-800 transition-all cursor-pointer"
+                            >
+                                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                                <span>Add {singular}</span>
+                            </Link>
+                        ) : null}
+                    </div>
                 </div>
 
-                <Card>
-                    <CardContent className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4 lg:p-5">
-                        <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                                <span className="text-sm">⌕</span>
-                            </span>
+                {/* ─── Panel with Directory Table ───────────────────────────────── */}
+                <div className="school-panel">
+                    <div className="panel-heading">
+                        <h2>{pageTitle} directory</h2>
+                        <span className="record-count">{users.total} records</span>
+                    </div>
+
+                    {/* Toolbar */}
+                    <div className="directory-toolbar">
+                        <form onSubmit={handleSearch} className="search-field">
+                            <span className="text-xs text-slate-400">⌕</span>
                             <input
                                 type="text"
-                                placeholder="Search name or email…"
-                                className="block w-full rounded-xl border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground shadow-sm outline-none ring-primary/20 transition placeholder:text-muted-foreground focus:border-primary/40 focus:ring-2"
-                                defaultValue={filters.search}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        router.get(
-                                            route('users.index'),
-                                            {
-                                                ...filters,
-                                                search: (e.target as HTMLInputElement).value,
-                                            },
-                                            { preserveState: true },
-                                        );
-                                    }
-                                }}
+                                placeholder={`Search ${singular}s...`}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                        </div>
+                        </form>
 
                         <select
-                            className="block w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none ring-primary/20 transition focus:border-primary/40 focus:ring-2"
-                            value={filters.role ?? ''}
-                            onChange={(e) =>
-                                router.get(
-                                    route('users.index'),
-                                    { ...filters, role: e.target.value },
-                                    { preserveState: true },
-                                )
-                            }
+                            className="directory-select"
+                            value={selectedRole}
+                            onChange={(e) => handleRoleChange(e.target.value)}
                         >
-                            <option value="">All roles</option>
-                            {roles.map((role) => (
-                                <option key={role} value={role}>
-                                    {role.replace(/_/g, ' ')}
+                            <option value="">All groups</option>
+                            {roles.map((r) => (
+                                <option key={r} value={r}>
+                                    {r.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                                 </option>
                             ))}
                         </select>
+                    </div>
 
-                        <select
-                            className="block w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none ring-primary/20 transition focus:border-primary/40 focus:ring-2"
-                            value={filters.status ?? ''}
-                            onChange={(e) =>
-                                router.get(
-                                    route('users.index'),
-                                    { ...filters, status: e.target.value },
-                                    { preserveState: true },
-                                )
-                            }
-                        >
-                            <option value="">All statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="suspended">Suspended</option>
-                        </select>
-                    </CardContent>
-                </Card>
-
-                <Card className="overflow-hidden p-0">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-border text-left text-sm">
-                            <thead className="bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {/* Table */}
+                    <div className="table-scroll">
+                        <table className="school-table directory-table">
+                            <thead>
                                 <tr>
-                                    <th className="px-6 py-3">User</th>
-                                    <th className="px-6 py-3">Role</th>
-                                    <th className="px-6 py-3">School</th>
-                                    <th className="px-6 py-3">Status</th>
-                                    <th className="px-6 py-3">Last login</th>
-                                    <th className="px-6 py-3 text-right">Actions</th>
+                                    <th>Name</th>
+                                    <th>ID</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th className="text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border bg-card">
-                                {users.data.map((user, index) => (
-                                    <motion.tr
-                                        key={user.id}
-                                        initial={{ opacity: 0, y: 6 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.03 }}
-                                        className="hover:bg-muted/30"
-                                    >
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-primary/10 text-sm font-bold text-primary">
-                                                    {user.avatar_initials}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-foreground">{user.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                                                    {user.phone ? (
-                                                        <p className="text-xs text-muted-foreground">{user.phone}</p>
-                                                    ) : null}
-                                                </div>
-                                            </div>
+                            <tbody>
+                                {users.data.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-12 text-center text-slate-400">
+                                            <p className="text-xs font-semibold">No records found</p>
                                         </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium capitalize text-foreground">
-                                                {user.role.replace(/_/g, ' ')}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-muted-foreground">
-                                            {user.school?.name ?? '—'}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <span
-                                                className={cn(
-                                                    'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
-                                                    statusColors[user.status],
-                                                )}
-                                            >
-                                                {user.status}
-                                            </span>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">
-                                            {user.last_login_at ? (
-                                                <span>
-                                                    {new Date(user.last_login_at).toLocaleString()}
-                                                    {user.last_login_ip ? (
-                                                        <span className="mt-0.5 block text-[10px]">
-                                                            {user.last_login_ip}
-                                                        </span>
-                                                    ) : null}
-                                                </span>
-                                            ) : (
-                                                <span className="italic">Never</span>
-                                            )}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                {canEdit ? (
-                                                    <Link
-                                                        href={route('users.edit', user.id)}
-                                                        className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                                                        title="Edit"
+                                    </tr>
+                                ) : (
+                                    users.data.map((user) => {
+                                        const displayId = `TCH-${String(user.id).padStart(4, '0')}`;
+                                        const primaryRole =
+                                            user.roles?.[0] ?? user.role ?? 'Teacher';
+                                        const subjectLabel =
+                                            primaryRole === 'teacher' ? 'Mathematics' : primaryRole.replace(/_/g, ' ');
+
+                                        return (
+                                            <tr key={user.id}>
+                                                <td>
+                                                    <div className="person-cell">
+                                                        <UserAvatar name={user.name} initials={user.avatar_initials} size="sm" />
+                                                        <div className="person-name">
+                                                            <strong>{user.name}</strong>
+                                                            <span>{user.email}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{displayId}</td>
+                                                <td>
+                                                    <span className="class-tag capitalize">
+                                                        {subjectLabel}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        className={cn(
+                                                            'status-pill',
+                                                            user.status === 'active'
+                                                                ? 'positive'
+                                                                : 'pending',
+                                                        )}
                                                     >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Link>
-                                                ) : null}
-                                                {canDelete ? (
-                                                    <button
-                                                        type="button"
-                                                        title="Delete"
-                                                        className="rounded-lg p-2 text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600"
-                                                        onClick={() => {
-                                                            setUserToDelete(user);
-                                                            setDeleteOpen(true);
-                                                        }}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                ) : null}
-                                            </div>
-                                        </td>
-                                    </motion.tr>
-                                ))}
+                                                        <span className="status-pill-dot" />
+                                                        {user.status === 'active' ? 'Active' : 'Inactive'}
+                                                    </span>
+                                                </td>
+                                                <td className="text-right">
+                                                    <div className="row-actions justify-end">
+                                                        <Link
+                                                            href={route('users.show', user.id)}
+                                                            title="View details"
+                                                        >
+                                                            <Eye size={13} />
+                                                        </Link>
+                                                        {canEdit ? (
+                                                            <Link
+                                                                href={route('users.edit', user.id)}
+                                                                title="Edit details"
+                                                            >
+                                                                <Pencil size={13} />
+                                                            </Link>
+                                                        ) : null}
+                                                        {canDelete ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setUserToDelete(user);
+                                                                    setDeleteOpen(true);
+                                                                }}
+                                                                title="Delete"
+                                                                className="action-delete"
+                                                            >
+                                                                <Trash2 size={13} />
+                                                            </button>
+                                                        ) : null}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>
-                </Card>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-muted-foreground">
-                        Showing <strong className="text-foreground">{users.data.length}</strong> of{' '}
-                        <strong className="text-foreground">{users.total}</strong> users
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                        {(users.meta?.links || (Array.isArray(users.links) ? users.links : [])).map(
-                            (link) => (
-                                <button
-                                    key={link.label + String(link.url)}
-                                    type="button"
-                                    disabled={!link.url}
-                                    onClick={() =>
-                                        link.url && router.get(link.url, filters, { preserveState: true })
-                                    }
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                    className={cn(
-                                        'rounded-lg border px-3 py-1.5 text-xs font-semibold transition',
-                                        link.active
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'border-border bg-card text-muted-foreground hover:bg-muted',
-                                        !link.url && 'cursor-not-allowed opacity-40',
-                                    )}
-                                />
-                            ),
-                        )}
+                    {/* Pagination */}
+                    <div className="pagination">
+                        <span>
+                            {users.data.length > 0 ? `1–${users.data.length}` : '0'} of {users.total} records
+                        </span>
+                        <div>
+                            <button
+                                type="button"
+                                disabled={users.current_page <= 1}
+                                onClick={() =>
+                                    users.prev_page_url && router.visit(users.prev_page_url)
+                                }
+                            >
+                                <ChevronLeft size={13} />
+                            </button>
+                            <span>
+                                Page {users.current_page} of {users.last_page}
+                            </span>
+                            <button
+                                type="button"
+                                disabled={users.current_page >= users.last_page}
+                                onClick={() =>
+                                    users.next_page_url && router.visit(users.next_page_url)
+                                }
+                            >
+                                <ChevronRight size={13} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* Delete Modal */}
             <Modal show={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth="md">
                 <div className="p-6">
-                    <h3 className="text-lg font-semibold text-foreground">Remove user</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Remove access for <strong className="text-foreground">{userToDelete?.name}</strong>? This
-                        cannot be undone.
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Delete {singular}?</h3>
+                    <p className="mt-2 text-xs text-slate-500">
+                        Remove access for <strong className="text-slate-900 dark:text-white">{userToDelete?.name}</strong>? This action cannot be undone.
                     </p>
                     <div className="mt-6 flex justify-end gap-2">
                         <SecondaryButton type="button" onClick={() => setDeleteOpen(false)}>
                             Cancel
                         </SecondaryButton>
                         <DangerButton type="button" onClick={confirmDelete}>
-                            Delete user
+                            Delete record
                         </DangerButton>
                     </div>
                 </div>
+            </Modal>
+
+            {/* Deactivation Modal */}
+            <Modal show={deactivateOpen} onClose={() => setDeactivateOpen(false)} maxWidth="md">
+                <form onSubmit={handleDeactivate} className="p-6 space-y-4">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Deactivate User Account</h3>
+                    <p className="text-xs text-slate-500">
+                        Provide a reason for deactivating <strong className="text-slate-900 dark:text-white">{userToDeactivate?.name}</strong>.
+                    </p>
+
+                    <div>
+                        <InputLabel htmlFor="deact_reason" value="Deactivation Reason *" />
+                        <TextInput
+                            id="deact_reason"
+                            className="mt-1 block w-full"
+                            value={deactivateReason}
+                            onChange={(e) => setDeactivateReason(e.target.value)}
+                            placeholder="e.g. Inactivity, contract completion, leave of absence..."
+                            required
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-border">
+                        <SecondaryButton type="button" onClick={() => setDeactivateOpen(false)}>
+                            Cancel
+                        </SecondaryButton>
+                        <DangerButton type="submit" disabled={deactivateProcessing || !deactivateReason.trim()}>
+                            Deactivate Account
+                        </DangerButton>
+                    </div>
+                </form>
             </Modal>
         </AuthenticatedLayout>
     );

@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Web\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Models\DocumentSequence;
 use App\Models\FeeStructure;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\Student;
+use App\Services\DocumentNumberService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class InvoiceController extends Controller
@@ -99,7 +100,8 @@ class InvoiceController extends Controller
         $discount = 0;
         $total = $subtotal - $discount;
 
-        $invoiceNumber = 'INV-' . date('Y') . '-' . strtoupper(Str::random(6));
+        $invoiceNumber = app(DocumentNumberService::class)
+            ->next((int) $request->user()->school_id, DocumentSequence::TYPE_INVOICE);
 
         $invoice = Invoice::create([
             'school_id' => $request->user()->school_id,
@@ -131,7 +133,8 @@ class InvoiceController extends Controller
 
     protected function authorizeFinance(Request $request): void
     {
-        abort_unless($request->user()->can('finance.manage') || $request->user()->can('finance.view'), 403);
+        abort_unless($request->user()->school_id !== null, 403, 'A school context is required for invoice and finance operations.');
+        abort_unless($request->user()->can('finance.manage') || $request->user()->can('finance.view'), 403, 'You do not have permission to view or manage finances.');
     }
 
     protected function assertSchool(Request $request, int $schoolId): void

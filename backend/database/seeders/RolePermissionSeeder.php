@@ -228,11 +228,13 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permName, 'sanctum'); // for API (mobile)
         }
 
-        // Super admin gets everything
+        // Super admin gets everything and is platform-wide (does not require school)
         $superAdmin = Role::findOrCreate('super_admin', 'web');
+        $superAdmin->forceFill(['requires_school' => false])->save();
         $superAdmin->syncPermissions(Permission::where('guard_name', 'web')->get());
 
         $superAdminApi = Role::findOrCreate('super_admin', 'sanctum');
+        $superAdminApi->forceFill(['requires_school' => false])->save();
         $superAdminApi->syncPermissions(Permission::where('guard_name', 'sanctum')->get());
 
         // All other roles

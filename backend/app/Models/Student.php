@@ -19,6 +19,8 @@ class Student extends Model
 
     protected $fillable = [
         'school_id',
+        'family_id',
+        'responsible_guardian_id',
         'user_id',
         'registration_number',
         'admission_number',
@@ -35,6 +37,8 @@ class Student extends Model
         'medical_notes',
         'enrollment_date',
         'status',
+        'status_reason',
+        'left_on',
         'photo_path',
         'metadata',
         'consent_policies',
@@ -48,6 +52,7 @@ class Student extends Model
         return [
             'date_of_birth' => 'date',
             'enrollment_date' => 'date',
+            'left_on' => 'date',
             'signature_date' => 'date',
             'consent_policies' => 'boolean',
             'consent_privacy' => 'boolean',
@@ -58,6 +63,21 @@ class Student extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class);
+    }
+
+    public function responsibleGuardian(): BelongsTo
+    {
+        return $this->belongsTo(Guardian::class, 'responsible_guardian_id');
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(StudentTransfer::class);
     }
 
     public function portalUser(): BelongsTo

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Web\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Models\DocumentSequence;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\DocumentNumberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class PaymentController extends Controller
@@ -70,7 +71,9 @@ class PaymentController extends Controller
             Payment::create([
                 'school_id' => $invoice->school_id,
                 'invoice_id' => $invoice->id,
-                'reference' => $validated['reference'] ?? ('RCPT-' . strtoupper(Str::random(8))),
+                'reference' => filled($validated['reference'] ?? null)
+                    ? $validated['reference']
+                    : app(DocumentNumberService::class)->next($invoice->school_id, DocumentSequence::TYPE_RECEIPT),
                 'amount' => $validated['amount'],
                 'method' => $validated['method'],
                 'received_by' => $request->user()->id,
@@ -91,6 +94,7 @@ class PaymentController extends Controller
 
     protected function authorizeFinance(Request $request): void
     {
-        abort_unless($request->user()->can('finance.manage'), 403);
+        abort_unless($request->user()->school_id !== null, 403, 'A school context is required for payment and finance operations.');
+        abort_unless($request->user()->can('finance.manage') || $request->user()->can('finance.view'), 403, 'You do not have permission to view or manage payments.');
     }
 }

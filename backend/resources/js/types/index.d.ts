@@ -56,6 +56,10 @@ export interface LaravelPagination<TItem> {
     last_page: number;
     per_page: number;
     total: number;
+    prev_page_url?: string | null;
+    next_page_url?: string | null;
+    from?: number | null;
+    to?: number | null;
 }
 
 export interface MetricsCard {

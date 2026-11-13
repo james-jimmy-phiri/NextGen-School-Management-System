@@ -29,6 +29,7 @@ class StoreRoleRequest extends FormRequest
                 Rule::unique('roles', 'name')->where('guard_name', 'web'),
                 Rule::notIn($reserved),
             ],
+            'requires_school' => ['nullable', 'boolean'],
         ];
     }
 

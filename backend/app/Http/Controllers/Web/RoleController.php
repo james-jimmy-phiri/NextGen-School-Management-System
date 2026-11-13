@@ -71,9 +71,12 @@ class RoleController extends Controller
 
     public function store(StoreRoleRequest $request): RedirectResponse
     {
+        $validated = $request->validated();
+
         Role::create([
-            'name' => $request->validated()['name'],
+            'name' => $validated['name'],
             'guard_name' => 'web',
+            'requires_school' => $request->boolean('requires_school', true),
         ]);
 
         return redirect()
@@ -86,12 +89,13 @@ class RoleController extends Controller
         $this->authorize('roles.manage');
 
         abort_unless($role->guard_name === 'web', 404);
-        abort_if($this->isSystemRole($role), 403, 'Built-in roles cannot be renamed.');
 
         return Inertia::render('Roles/Edit', [
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'is_system' => $this->isSystemRole($role),
+                'requires_school' => (bool) ($role->requires_school ?? ($role->name !== 'super_admin')),
             ],
         ]);
     }
@@ -99,13 +103,29 @@ class RoleController extends Controller
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
         abort_unless($role->guard_name === 'web', 404);
-        abort_if($this->isSystemRole($role), 403, 'Built-in roles cannot be renamed.');
 
-        $role->update(['name' => $request->validated()['name']]);
+        $validated = $request->validated();
+        $payload = [];
+
+        if (! $this->isSystemRole($role)) {
+            $payload['name'] = $validated['name'];
+        }
+
+        if ($request->has('requires_school')) {
+            if ($role->name === 'super_admin') {
+                $payload['requires_school'] = false;
+            } else {
+                $payload['requires_school'] = $request->boolean('requires_school');
+            }
+        }
+
+        if (! empty($payload)) {
+            $role->update($payload);
+        }
 
         return redirect()
             ->route('roles.index')
-            ->with('success', 'Role name updated.');
+            ->with('success', 'Role updated successfully.');
     }
 
     public function destroy(Role $role): RedirectResponse

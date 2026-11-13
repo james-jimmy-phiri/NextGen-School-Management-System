@@ -21,6 +21,7 @@ class RoleResource extends JsonResource
             'name' => $this->name,
             'permissions' => $this->permissions->pluck('name')->values(),
             'is_system' => in_array($this->name, $systemNames, true),
+            'requires_school' => (bool) ($this->requires_school ?? ($this->name !== 'super_admin')),
             'users_count' => (int) ($this->users_count ?? 0),
         ];
     }

@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Admission;
+use App\Models\DocumentSequence;
 use App\Models\Guardian;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\User;
+use App\Services\DocumentNumberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -86,12 +88,8 @@ class AdmissionController extends Controller
             }
         }
 
-        $referenceNumber = 'APP-' . date('Y') . '-' . strtoupper(Str::random(6));
-        while (Admission::where('reference_number', $referenceNumber)->exists()) {
-            $referenceNumber = 'APP-' . date('Y') . '-' . strtoupper(Str::random(6));
-        }
-
         $schoolId = $request->user()->school_id ?? \App\Models\School::query()->orderBy('id')->value('id');
+        $referenceNumber = app(DocumentNumberService::class)->next((int) $schoolId, DocumentSequence::TYPE_APPLICATION);
 
         Admission::create(array_merge($validated, [
             'school_id' => $schoolId,
@@ -142,7 +140,7 @@ class AdmissionController extends Controller
                     'email' => $admission->parent_email,
                     'phone' => $admission->parent_phone,
                     'password' => Hash::make(Str::random(12)),
-                    'status' => 'active',
+                    'status' => 'inactive',
                 ]);
                 $parentUser->assignRole('parent');
             }
@@ -158,7 +156,8 @@ class AdmissionController extends Controller
                 ]
             );
 
-            $admissionNumber = 'STU-' . date('Y') . '-' . str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
+            $admissionNumber = app(DocumentNumberService::class)
+                ->next((int) $admission->school_id, DocumentSequence::TYPE_ADMISSION);
 
             $student = Student::create([
                 'school_id' => $admission->school_id,

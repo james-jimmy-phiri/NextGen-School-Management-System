@@ -30,6 +30,7 @@ class UpdateRoleRequest extends FormRequest
                     ->where('guard_name', 'web')
                     ->ignore($role->id),
             ],
+            'requires_school' => ['nullable', 'boolean'],
         ];
     }
 

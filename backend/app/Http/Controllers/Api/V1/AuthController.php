@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Models\Guardian;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,31 +15,71 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'nullable|string',
+            'login' => 'nullable|string',
             'password' => 'required',
-            'device_name' => 'required',
+            'device_name' => 'nullable|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $identifier = (string) ($request->input('login') ?: $request->input('email'));
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if ($identifier === '') {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'login' => ['Email or phone is required.'],
             ]);
         }
 
-        if ($user->status !== 'active') {
+        $user = User::query()
+            ->where('email', $identifier)
+            ->orWhere('phone', $identifier)
+            ->first();
+
+        if (! $user || ! Hash::check((string) $request->input('password'), $user->password)) {
+            $user?->registerFailedLogin();
+
             return response()->json([
-                'message' => 'Your account is '.$user->status.'.',
+                'message' => 'The provided credentials are incorrect.',
+            ], 401);
+        }
+
+        if ($user->isLocked() || $user->status !== 'active') {
+            return response()->json([
+                'message' => $user->isLocked()
+                    ? 'Account locked after too many failed attempts.'
+                    : 'Your account is '.$user->status.'.',
             ], 403);
         }
 
-        $token = $user->createToken($request->device_name)->plainTextToken;
+        if ($user->hasRole('parent')) {
+            $guardian = Guardian::query()->where('user_id', $user->id)->first();
+            if ($guardian && ! $guardian->isVerified()) {
+                return response()->json([
+                    'message' => 'Guardian relationship has not been verified by the school.',
+                ], 403);
+            }
+        }
+
+        $user->clearFailedLogins();
+
+        $deviceName = (string) ($request->input('device_name') ?: 'api');
+        $token = $user->createToken($deviceName)->plainTextToken;
 
         return response()->json([
+            'success' => true,
             'token' => $token,
+            'token_type' => 'Bearer',
             'user' => new UserResource($user),
+            'data' => [
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'user' => new UserResource($user),
+            ],
         ]);
+    }
+
+    public function token(Request $request)
+    {
+        return $this->login($request);
     }
 
     public function logout(Request $request)

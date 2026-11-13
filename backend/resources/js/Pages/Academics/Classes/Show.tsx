@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
-import SecondaryButton from '@/Components/SecondaryButton';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
-import { BookOpen, Users, UserCog, GraduationCap, Trash2, PlusCircle, Check } from 'lucide-react';
+import {
+    BookOpen,
+    Users,
+    UserCog,
+    GraduationCap,
+    Trash2,
+    PlusCircle,
+    Check,
+    ChevronRight,
+    Layers,
+    Shield,
+} from 'lucide-react';
 
 export default function Show({ classGroup, allSubjects, teachers, teacherAllocations }: any) {
     const [activeTab, setActiveTab] = useState('subjects');
@@ -43,249 +53,249 @@ export default function Show({ classGroup, allSubjects, teachers, teacherAllocat
     };
 
     const removeAllocation = (id: number) => {
-        if(confirm('Are you sure you want to remove this teacher allocation?')) {
+        if (confirm('Are you sure you want to remove this teacher allocation?')) {
             router.delete(route('academics.allocations.destroy', id));
         }
     };
 
-    // 3. Student Manual Subject Drop
-    const removeStudentSubject = (studentId: number, subjectId: number) => {
-        if(confirm('Are you sure you want to drop this subject for the student?')) {
-            router.delete(route('academics.students.subjects.drop', { studentId, subjectId }));
-        }
-    };
-
     const tabs = [
-        { id: 'subjects', label: 'Class Subjects', icon: BookOpen },
-        { id: 'teachers', label: 'Subject Teachers', icon: UserCog },
-        { id: 'students', label: 'Student Enrollments', icon: GraduationCap },
-        { id: 'streams', label: 'Streams overview', icon: Users },
+        { id: 'subjects', label: 'Class Subjects', count: classGroup.subjects?.length || 0, icon: BookOpen },
+        { id: 'teachers', label: 'Subject Teachers', count: teacherAllocations?.length || 0, icon: UserCog },
+        { id: 'students', label: 'Student Enrollments', count: classGroup.enrollments?.length || 0, icon: GraduationCap },
+        { id: 'streams', label: 'Streams & Sections', count: classGroup.streams?.length || 0, icon: Layers },
     ];
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">{classGroup.name} - Academic Management</h2>}>
-            <Head title={`${classGroup.name} Management`} />
+        <AuthenticatedLayout>
+            <Head title={`${classGroup.name} · Academic Management`} />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
-                    
-                    {/* Header Card */}
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg border border-gray-200">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{classGroup.name}</h3>
-                                <p className="text-gray-500 mt-1">{classGroup.academic_year?.title} • {classGroup.grade_level?.label}</p>
+            <div className="space-y-6">
+                {/* ─── Breadcrumb Navigation ──────────────────────────────────── */}
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    <Link href="/dashboard" className="hover:text-foreground">Home</Link>
+                    <ChevronRight className="h-3 w-3" />
+                    <Link href="/academics/classes" className="hover:text-foreground">Academics</Link>
+                    <ChevronRight className="h-3 w-3" />
+                    <Link href="/academics/classes" className="hover:text-foreground">Classes</Link>
+                    <ChevronRight className="h-3 w-3" />
+                    <span className="text-foreground">{classGroup.name}</span>
+                </div>
+
+                {/* ─── Header Summary Card ────────────────────────────────────── */}
+                <div className="flex flex-col gap-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-950/40">
+                            <Layers className="h-8 w-8" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl font-black text-slate-900 dark:text-white">
+                                    {classGroup.name}
+                                </h1>
+                                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                    Active Cohort
+                                </span>
                             </div>
-                            <div className="flex gap-4 text-center">
-                                <div className="bg-indigo-50 px-4 py-2 rounded-lg">
-                                    <span className="block text-xl font-bold text-indigo-700">{classGroup.enrollments?.length || 0}</span>
-                                    <span className="text-xs text-indigo-600 font-medium uppercase tracking-wide">Students</span>
-                                </div>
-                                <div className="bg-emerald-50 px-4 py-2 rounded-lg">
-                                    <span className="block text-xl font-bold text-emerald-700">{classGroup.subjects?.length || 0}</span>
-                                    <span className="text-xs text-emerald-600 font-medium uppercase tracking-wide">Subjects</span>
-                                </div>
-                            </div>
+                            <p className="mt-1 text-xs text-slate-500">
+                                {classGroup.academic_year?.title ?? '2026 Academic Session'} &middot; Grade Level: <span className="font-semibold text-slate-700 dark:text-slate-300">{classGroup.grade_level?.label ?? 'Form'}</span>
+                            </p>
                         </div>
                     </div>
 
-                    {/* Navigation Tabs */}
-                    <div className="bg-white border-b border-gray-200 shadow-sm sm:rounded-t-lg">
-                        <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
-                            {tabs.map((tab) => {
-                                const Icon = tab.icon;
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`
-                                            group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                                            ${activeTab === tab.id 
-                                                ? 'border-indigo-500 text-indigo-600' 
-                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                            }
-                                        `}
-                                    >
-                                        <Icon className={`-ml-0.5 mr-2 h-5 w-5 ${activeTab === tab.id ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                                        {tab.label}
-                                    </button>
-                                );
-                            })}
-                        </nav>
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center dark:border-slate-800 dark:bg-slate-950/40">
+                            <span className="block text-xl font-black text-indigo-600">{classGroup.enrollments?.length || 0}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Learners</span>
+                        </div>
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center dark:border-slate-800 dark:bg-slate-950/40">
+                            <span className="block text-xl font-black text-emerald-600">{classGroup.subjects?.length || 0}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subjects</span>
+                        </div>
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center dark:border-slate-800 dark:bg-slate-950/40">
+                            <span className="block text-xl font-black text-amber-600">{classGroup.streams?.length || 0}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Streams</span>
+                        </div>
                     </div>
+                </div>
 
-                    {/* Tab Contents */}
-                    <div className="bg-white p-6 shadow-sm sm:rounded-b-lg border border-gray-200 border-t-0">
-                        
-                        {/* 1. Subjects Tab */}
-                        {activeTab === 'subjects' && (
-                            <div className="animate-in fade-in duration-300">
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">Assign Class Subjects</h4>
-                                <p className="text-gray-500 text-sm mb-6">Select the subjects offered in {classGroup.name}. All students currently enrolled will be automatically registered for these subjects.</p>
-                                
-                                <form onSubmit={submitSubjects}>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                                        {allSubjects.map((subject: any) => {
-                                            const isSelected = subjectData.subject_ids.includes(subject.id);
-                                            return (
-                                                <div 
-                                                    key={subject.id}
-                                                    onClick={() => handleSubjectToggle(subject.id)}
-                                                    className={`
-                                                        p-4 border rounded-xl cursor-pointer flex items-center justify-between transition-all
-                                                        ${isSelected ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-white border-gray-200 hover:border-indigo-300'}
-                                                    `}
-                                                >
-                                                    <div>
-                                                        <p className={`font-semibold ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>{subject.name}</p>
-                                                        <p className={`text-xs ${isSelected ? 'text-indigo-600' : 'text-gray-500'}`}>{subject.code}</p>
-                                                    </div>
-                                                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'}`}>
-                                                        {isSelected && <Check className="w-4 h-4 text-white" />}
-                                                    </div>
+                {/* ─── Navigation Tabs ────────────────────────────────────────── */}
+                <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3 text-xs font-bold dark:border-slate-800">
+                    {tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        const isSelected = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 transition ${
+                                    isSelected
+                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                                }`}
+                            >
+                                <Icon className="h-4 w-4" />
+                                <span>{tab.label}</span>
+                                <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+                                    isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                                }`}>
+                                    {tab.count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* ─── Tab Contents ───────────────────────────────────────────── */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    {/* 1. Subjects Tab */}
+                    {activeTab === 'subjects' && (
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Assign Class Subjects</h3>
+                                <p className="mt-1 text-xs text-slate-500">
+                                    Select the subjects offered in {classGroup.name}. All enrolled learners automatically register for these courses.
+                                </p>
+                            </div>
+
+                            <form onSubmit={submitSubjects} className="space-y-6">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {allSubjects.map((subject: any) => {
+                                        const isSelected = subjectData.subject_ids.includes(subject.id);
+                                        return (
+                                            <div
+                                                key={subject.id}
+                                                onClick={() => handleSubjectToggle(subject.id)}
+                                                className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all ${
+                                                    isSelected
+                                                        ? 'border-indigo-500 bg-indigo-50/70 shadow-sm dark:border-indigo-600 dark:bg-indigo-950/30'
+                                                        : 'border-slate-200 hover:border-indigo-300 dark:border-slate-800'
+                                                }`}
+                                            >
+                                                <div>
+                                                    <p className={`text-sm font-bold ${isSelected ? 'text-indigo-950 dark:text-indigo-200' : 'text-slate-800 dark:text-slate-200'}`}>
+                                                        {subject.name}
+                                                    </p>
+                                                    <p className="mt-0.5 font-mono text-xs text-slate-400">{subject.code}</p>
                                                 </div>
-                                            );
-                                        })}
+                                                <div className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                                                    isSelected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700'
+                                                }`}>
+                                                    {isSelected && <Check className="h-3.5 w-3.5" />}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800">
+                                    <PrimaryButton disabled={processingSubjects}>
+                                        {processingSubjects ? 'Saving Configurations...' : 'Save Subject Configuration'}
+                                    </PrimaryButton>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* 2. Teachers Tab */}
+                    {activeTab === 'teachers' && (
+                        <div className="grid gap-8 lg:grid-cols-3">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-950/30">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Allocate Teacher</h3>
+                                <p className="mt-1 text-xs text-slate-500">Assign faculty members to specific subjects or streams.</p>
+
+                                <form onSubmit={submitAllocation} className="mt-4 space-y-4">
+                                    <div>
+                                        <InputLabel value="Subject *" />
+                                        <select
+                                            className="mt-1 block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                                            value={allocData.subject_id}
+                                            onChange={(e) => setAllocData('subject_id', e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Select subject...</option>
+                                            {classGroup.subjects?.map((s: any) => (
+                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                            ))}
+                                        </select>
+                                        <InputError message={allocErrors.subject_id} className="mt-2" />
                                     </div>
-                                    <div className="flex justify-end pt-4 border-t border-gray-100">
-                                        <PrimaryButton disabled={processingSubjects}>
-                                            {processingSubjects ? 'Saving...' : 'Save Subject Configuration'}
-                                        </PrimaryButton>
+
+                                    <div>
+                                        <InputLabel value="Stream / Section" />
+                                        <select
+                                            className="mt-1 block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                                            value={allocData.stream_id}
+                                            onChange={(e) => setAllocData('stream_id', e.target.value)}
+                                        >
+                                            <option value="">All Streams (Cohort-wide)</option>
+                                            {classGroup.streams?.map((s: any) => (
+                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
+
+                                    <div>
+                                        <InputLabel value="Educator *" />
+                                        <select
+                                            className="mt-1 block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                                            value={allocData.teacher_id}
+                                            onChange={(e) => setAllocData('teacher_id', e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Select educator...</option>
+                                            {teachers.map((t: any) => (
+                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                            ))}
+                                        </select>
+                                        <InputError message={allocErrors.teacher_id} className="mt-2" />
+                                    </div>
+
+                                    <PrimaryButton type="submit" disabled={processingAlloc} className="w-full justify-center">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Save Allocation
+                                    </PrimaryButton>
                                 </form>
                             </div>
-                        )}
 
-                        {/* 2. Teachers Tab */}
-                        {activeTab === 'teachers' && (
-                            <div className="animate-in fade-in duration-300 grid grid-cols-1 md:grid-cols-3 gap-8">
-                                <div className="md:col-span-1 border-r border-gray-100 pr-8">
-                                    <h4 className="text-lg font-bold text-gray-900 mb-6">Allocate Teacher</h4>
-                                    <form onSubmit={submitAllocation} className="space-y-4">
-                                        <div>
-                                            <InputLabel value="Subject *" />
-                                            <select 
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                value={allocData.subject_id}
-                                                onChange={e => setAllocData('subject_id', e.target.value)}
-                                                required
-                                            >
-                                                <option value="">Select subject...</option>
-                                                {classGroup.subjects?.map((s: any) => (
-                                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                                ))}
-                                            </select>
-                                            <InputError message={allocErrors.subject_id} className="mt-2" />
-                                        </div>
-                                        <div>
-                                            <InputLabel value="Stream (Optional)" />
-                                            <select 
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                value={allocData.stream_id}
-                                                onChange={e => setAllocData('stream_id', e.target.value)}
-                                            >
-                                                <option value="">All Streams</option>
-                                                {classGroup.streams?.map((s: any) => (
-                                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                                ))}
-                                            </select>
-                                            <p className="text-xs text-gray-500 mt-1">Leave blank to assign to the entire class group.</p>
-                                        </div>
-                                        <div>
-                                            <InputLabel value="Teacher *" />
-                                            <select 
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                value={allocData.teacher_id}
-                                                onChange={e => setAllocData('teacher_id', e.target.value)}
-                                                required
-                                            >
-                                                <option value="">Select teacher...</option>
-                                                {teachers.map((t: any) => (
-                                                    <option key={t.id} value={t.id}>{t.name}</option>
-                                                ))}
-                                            </select>
-                                            <InputError message={allocErrors.teacher_id} className="mt-2" />
-                                        </div>
-                                        <PrimaryButton type="submit" disabled={processingAlloc} className="w-full justify-center">
-                                            <PlusCircle className="w-4 h-4 mr-2" /> Assign Teacher
-                                        </PrimaryButton>
-                                    </form>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <h4 className="text-lg font-bold text-gray-900 mb-6">Current Allocations</h4>
-                                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stream</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teacher</th>
-                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {teacherAllocations.map((alloc: any) => (
-                                                    <tr key={alloc.id}>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{alloc.subject?.name}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {alloc.stream ? alloc.stream.name : <span className="text-gray-400 italic">All streams</span>}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{alloc.teacher?.name}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                            <button onClick={() => removeAllocation(alloc.id)} className="text-red-600 hover:text-red-900">
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {teacherAllocations.length === 0 && (
-                                                    <tr>
-                                                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500 text-sm">
-                                                            No teachers allocated to subjects yet.
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 3. Students Tab */}
-                        {activeTab === 'students' && (
-                            <div className="animate-in fade-in duration-300">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h4 className="text-lg font-bold text-gray-900">Enrolled Students</h4>
-                                    <p className="text-sm text-gray-500">Students automatically receive all class subjects upon enrollment.</p>
-                                </div>
-                                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
+                            <div className="lg:col-span-2 space-y-4">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Active Allocations</h3>
+                                <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                                    <table className="min-w-full divide-y divide-slate-100 text-sm dark:divide-slate-800">
+                                        <thead className="bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-950/50">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admission No.</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stream</th>
+                                                <th className="px-5 py-3">Subject</th>
+                                                <th className="px-5 py-3">Stream</th>
+                                                <th className="px-5 py-3">Teacher</th>
+                                                <th className="px-5 py-3 text-right">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {classGroup.enrollments?.map((enrollment: any) => (
-                                                <tr key={enrollment.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {enrollment.student?.first_name} {enrollment.student?.last_name}
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {teacherAllocations.map((alloc: any) => (
+                                                <tr key={alloc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                                    <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white">
+                                                        {alloc.subject?.name}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {enrollment.student?.admission_number}
+                                                    <td className="px-5 py-3.5 text-xs text-slate-500">
+                                                        {alloc.stream ? alloc.stream.name : <span className="italic text-slate-400">All streams</span>}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {enrollment.stream ? enrollment.stream.name : 'Unassigned'}
+                                                    <td className="px-5 py-3.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                                        {alloc.teacher?.name}
+                                                    </td>
+                                                    <td className="px-5 py-3.5 text-right">
+                                                        <button
+                                                            onClick={() => removeAllocation(alloc.id)}
+                                                            className="text-rose-500 hover:text-rose-700"
+                                                            title="Remove allocation"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {(!classGroup.enrollments || classGroup.enrollments.length === 0) && (
+                                            {teacherAllocations.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500 text-sm">
-                                                        No students currently enrolled in this class.
+                                                    <td colSpan={4} className="py-8 text-center text-xs text-slate-400">
+                                                        No teachers allocated to subjects yet.
                                                     </td>
                                                 </tr>
                                             )}
@@ -293,38 +303,106 @@ export default function Show({ classGroup, allSubjects, teachers, teacherAllocat
                                     </table>
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {/* 4. Streams Tab */}
-                        {activeTab === 'streams' && (
-                            <div className="animate-in fade-in duration-300">
-                                <h4 className="text-lg font-bold text-gray-900 mb-6">Class Streams (Sections)</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    {classGroup.streams?.map((stream: any) => (
-                                        <div key={stream.id} className="p-5 bg-white border border-gray-200 shadow-sm rounded-xl">
-                                            <h5 className="font-bold text-gray-800 text-lg">{stream.name}</h5>
-                                            <div className="mt-4 flex flex-col gap-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-500">Classroom:</span>
-                                                    <span className="font-medium text-gray-900">{stream.classroom || 'Not set'}</span>
-                                                </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-500">Capacity:</span>
-                                                    <span className="font-medium text-gray-900">{stream.capacity || 'Unlimited'}</span>
-                                                </div>
+                    {/* 3. Students Tab */}
+                    {activeTab === 'students' && (
+                        <div className="space-y-4">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Enrolled Learners</h3>
+                                <p className="text-xs text-slate-400">All students registered under this academic cohort.</p>
+                            </div>
+
+                            <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                                <table className="min-w-full divide-y divide-slate-100 text-sm dark:divide-slate-800">
+                                    <thead className="bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-950/50">
+                                        <tr>
+                                            <th className="px-6 py-3.5">Learner Profile</th>
+                                            <th className="px-6 py-3.5">Admission Number</th>
+                                            <th className="px-6 py-3.5">Stream</th>
+                                            <th className="px-6 py-3.5 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {classGroup.enrollments?.map((enrollment: any) => (
+                                            <tr key={enrollment.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                                <td className="px-6 py-3.5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500/10 text-xs font-bold text-indigo-600">
+                                                            {enrollment.student?.first_name?.[0]}
+                                                            {enrollment.student?.last_name?.[0]}
+                                                        </div>
+                                                        <span className="font-bold text-slate-900 dark:text-white">
+                                                            {enrollment.student?.first_name} {enrollment.student?.last_name}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-3.5 font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                                    {enrollment.student?.admission_number}
+                                                </td>
+                                                <td className="px-6 py-3.5 text-xs text-slate-500">
+                                                    {enrollment.stream ? enrollment.stream.name : 'Standard Stream'}
+                                                </td>
+                                                <td className="px-6 py-3.5 text-right">
+                                                    <Link
+                                                        href={route('students.show', enrollment.student?.id ?? 0)}
+                                                        className="text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+                                                    >
+                                                        Profile &rarr;
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {(!classGroup.enrollments || classGroup.enrollments.length === 0) && (
+                                            <tr>
+                                                <td colSpan={4} className="py-8 text-center text-xs text-slate-400">
+                                                    No students enrolled in this cohort yet.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 4. Streams Tab */}
+                    {activeTab === 'streams' && (
+                        <div className="space-y-4">
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">Cohort Streams & Classrooms</h3>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {classGroup.streams?.map((stream: any) => (
+                                    <div
+                                        key={stream.id}
+                                        className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/40"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-base font-black text-slate-900 dark:text-white">{stream.name}</h4>
+                                            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                                                Active Stream
+                                            </span>
+                                        </div>
+                                        <div className="mt-4 space-y-2 text-xs">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-500">Assigned Room:</span>
+                                                <span className="font-bold text-slate-800 dark:text-slate-200">{stream.classroom || 'Main Block'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-500">Target Capacity:</span>
+                                                <span className="font-bold text-slate-800 dark:text-slate-200">{stream.capacity || '45 Seats'}</span>
                                             </div>
                                         </div>
-                                    ))}
-                                    {(!classGroup.streams || classGroup.streams.length === 0) && (
-                                        <div className="col-span-full py-8 text-center text-gray-500 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
-                                            No streams configured for this class. You can set them up in School Setup.
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                ))}
+                                {(!classGroup.streams || classGroup.streams.length === 0) && (
+                                    <div className="col-span-full rounded-xl border border-dashed border-slate-300 p-8 text-center text-xs text-slate-400">
+                                        No specific streams configured for this class.
+                                    </div>
+                                )}
                             </div>
-                        )}
-
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

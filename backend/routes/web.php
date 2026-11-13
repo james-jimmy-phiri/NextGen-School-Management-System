@@ -27,6 +27,21 @@ Route::get('/', function () {
     ]);
 });
 
+// ─── Public Website Pages ──────────────────────────────────────────────────────
+Route::prefix('site')->name('site.')->group(function () {
+    Route::get('/about',        static fn () => Inertia::render('Site/About'))->name('about');
+    Route::get('/onboarding',   static fn () => Inertia::render('Site/Onboarding'))->name('onboarding');
+    Route::get('/features',     static fn () => Inertia::render('Site/Features'))->name('features');
+    Route::get('/security',     static fn () => Inertia::render('Site/Security'))->name('security');
+    Route::get('/solutions',    static fn () => Inertia::render('Site/Solutions'))->name('solutions');
+    Route::get('/compare',      static fn () => Inertia::render('Site/Comparison'))->name('compare');
+    Route::get('/pricing',      static fn () => Inertia::render('Site/Pricing'))->name('pricing');
+    Route::get('/support',      static fn () => Inertia::render('Site/HelpCenter'))->name('support');
+    Route::get('/contact',      static fn () => Inertia::render('Site/Contact'))->name('contact');
+});
+// Also expose /about as a top-level alias
+Route::get('/about', static fn () => Inertia::render('Site/About'))->name('about');
+
 // Legacy apply URL → school admissions wizard
 Route::get('/apply/{school:slug?}', [App\Http\Controllers\Web\StudentRegistrationController::class, 'create'])->name('apply.create');
 Route::post('/apply', [App\Http\Controllers\Web\StudentRegistrationController::class, 'store'])->name('apply.store');
@@ -46,13 +61,29 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
         ->name('erp.page');
 
     Route::resource('schools', SchoolController::class)->except(['show']);
+
+    Route::get('/students/export', [\App\Http\Controllers\Web\StudentExportController::class, 'students'])->name('students.export');
+    Route::get('/students/class-list', [\App\Http\Controllers\Web\StudentExportController::class, 'classList'])->name('students.class-list');
+    Route::get('/students/import/template', [\App\Http\Controllers\Web\DataImportController::class, 'template'])->name('students.import.template');
+    Route::get('/students/import', [\App\Http\Controllers\Web\DataImportController::class, 'create'])->name('students.import.create');
+    Route::post('/students/import', [\App\Http\Controllers\Web\DataImportController::class, 'preview'])->name('students.import.preview');
+    Route::get('/students/import/{import}', [\App\Http\Controllers\Web\DataImportController::class, 'show'])->name('students.import.show');
+    Route::post('/students/import/{import}/commit', [\App\Http\Controllers\Web\DataImportController::class, 'commit'])->name('students.import.commit');
+    Route::get('/students/promotions', [\App\Http\Controllers\Web\StudentLifecycleController::class, 'promotion'])->name('students.promotions');
+    Route::post('/students/promotions', [\App\Http\Controllers\Web\StudentLifecycleController::class, 'promote'])->name('students.promote');
+    Route::get('/students/transfers', [\App\Http\Controllers\Web\StudentLifecycleController::class, 'transfers'])->name('students.transfers');
+    Route::post('/students/transfers', [\App\Http\Controllers\Web\StudentLifecycleController::class, 'transfer'])->name('students.transfer');
+    Route::get('/students/alumni', [\App\Http\Controllers\Web\StudentLifecycleController::class, 'alumni'])->name('students.alumni');
+    Route::post('/students/graduate', [\App\Http\Controllers\Web\StudentLifecycleController::class, 'graduate'])->name('students.graduate');
     Route::resource('students', StudentController::class);
+
     Route::get('/guardians', [\App\Http\Controllers\Web\GuardianController::class, 'index'])->name('guardians.index');
+    Route::post('/guardians/{guardian}/verify', [\App\Http\Controllers\Web\GuardianController::class, 'verify'])->name('guardians.verify');
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::get('/attendance/mark', [AttendanceController::class, 'mark'])->name('attendance.mark');
     Route::post('/attendance/sessions', [AttendanceController::class, 'storeSession'])->name('attendance.sessions.store');
 
-    Route::prefix('finance')->name('finance.')->group(function (): void {
+    Route::prefix('finance')->name('finance.')->middleware('permission:finance.view|finance.manage')->group(function (): void {
         Route::get('/fee-structures', [\App\Http\Controllers\Web\Finance\FeeStructureController::class, 'index'])->name('fee-structures.index');
         Route::get('/fee-structures/create', [\App\Http\Controllers\Web\Finance\FeeStructureController::class, 'create'])->name('fee-structures.create');
         Route::post('/fee-structures', [\App\Http\Controllers\Web\Finance\FeeStructureController::class, 'store'])->name('fee-structures.store');
@@ -92,7 +123,10 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
     Route::resource('student-awards', \App\Http\Controllers\Web\StudentAwardController::class)->except(['show', 'create', 'edit']);
 
     // ─── Identity & access (users, roles, permissions — Spatie RBAC) ────────
-    Route::resource('users', UserManagementController::class)->except(['show']);
+    Route::post('/users/{user}/unlock', [UserManagementController::class, 'unlock'])->name('users.unlock');
+    Route::post('/users/{user}/deactivate', [UserManagementController::class, 'deactivate'])->name('users.deactivate');
+    Route::post('/users/{user}/reactivate', [UserManagementController::class, 'reactivate'])->name('users.reactivate');
+    Route::resource('users', UserManagementController::class);
 
     Route::get('/permissions/create', [PermissionController::class, 'create'])
         ->middleware('permission:roles.manage')
@@ -123,6 +157,8 @@ Route::middleware(['auth', 'resolve.tenant'])->group(function (): void {
     Route::middleware('permission:school_setup.view')->prefix('school-setup')->name('school-setup.')->group(function (): void {
         Route::get('/', [\App\Http\Controllers\Web\SchoolSetupController::class, 'index'])->name('index');
         Route::post('/school', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateSchool'])->name('school.update');
+        Route::post('/document-numbers', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateDocumentNumbers'])->name('document-numbers.update');
+        Route::post('/communication', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateCommunication'])->name('communication.update');
 
         Route::post('/academic-years', [\App\Http\Controllers\Web\SchoolSetupController::class, 'storeAcademicYear'])->name('academic-years.store');
         Route::patch('/academic-years/{id}', [\App\Http\Controllers\Web\SchoolSetupController::class, 'updateAcademicYear'])->name('academic-years.update');

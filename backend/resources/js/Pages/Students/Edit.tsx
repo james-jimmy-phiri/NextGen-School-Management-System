@@ -87,9 +87,11 @@ export default function Edit({ auth, student }: PageProps<{ student: any }>) {
                                         onChange={(e) => setData('status', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     >
+                                        <option value="applicant">Applicant</option>
                                         <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
                                         <option value="suspended">Suspended</option>
+                                        <option value="transferred">Transferred</option>
+                                        <option value="withdrawn">Withdrawn</option>
                                         <option value="graduated">Graduated</option>
                                     </select>
                                     {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}

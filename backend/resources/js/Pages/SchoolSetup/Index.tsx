@@ -60,25 +60,27 @@ export default function SchoolSetupIndex(props: Props) {
     ].filter(tab => tab.permission !== false);
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex flex-col gap-1.5">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
-                        Administration
-                    </p>
-                    <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-                        School Configuration
-                    </h2>
-                    <p className="text-sm font-medium text-slate-500">
-                        Manage your institution's core settings, academic structure, and operations.
-                    </p>
-                </div>
-            }
-        >
+        <AuthenticatedLayout breadcrumbs={[{ label: 'Settings' }, { label: 'School Configuration' }]}>
             <Head title="School Setup" />
             <Toaster position="top-right" />
 
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="school-app">
+                {/* Page Header */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 leading-none">
+                            ADMINISTRATION
+                        </p>
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+                            School Configuration
+                        </h1>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Manage your institution's core settings, academic structure, and operations.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-64 shrink-0">
                     <nav className="flex flex-col space-y-1">
                         {tabs.map((tab) => (
@@ -130,6 +132,7 @@ export default function SchoolSetupIndex(props: Props) {
                         </motion.div>
                     </AnimatePresence>
                 </div>
+            </div>
             </div>
         </AuthenticatedLayout>
     );

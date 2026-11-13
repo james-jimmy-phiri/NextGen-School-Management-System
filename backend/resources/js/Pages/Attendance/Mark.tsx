@@ -80,35 +80,33 @@ export default function Mark({
     const selectedClass = classes.find((c) => String(c.id) === String(data.class_group_id));
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href={route('attendance.index')}
-                            className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-300 shadow-sm transition-all"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                        </Link>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Mark Class Roll Call</h2>
-                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
-                                    FR-013 Manual Entry
-                                </span>
-                            </div>
-                            <p className="text-sm text-gray-500 mt-0.5">
-                                Reconcile daily session attendance, update statuses, and trigger guardian notifications
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            }
-        >
+        <AuthenticatedLayout breadcrumbs={[{ label: 'Attendance', href: route('attendance.index') }, { label: 'Mark Roll Call' }]}>
             <Head title="Mark Attendance" />
 
-            <div className="py-8">
-                <div className="mx-auto max-w-5xl sm:px-6 lg:px-8 space-y-6">
+            <div className="school-app">
+                {/* Page Header */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 leading-none">
+                            ATTENDANCE
+                        </p>
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+                            Mark Class Roll Call
+                        </h1>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Reconcile daily session attendance, update statuses, and trigger guardian notifications
+                        </p>
+                    </div>
+                    <Link
+                        href={route('attendance.index')}
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition-all dark:border-border dark:bg-card dark:text-slate-200 shrink-0"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Back to Attendance
+                    </Link>
+                </div>
+
+                <div className="max-w-5xl space-y-5">
 
                     {flash?.success && (
                         <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 flex items-center gap-3 shadow-sm">

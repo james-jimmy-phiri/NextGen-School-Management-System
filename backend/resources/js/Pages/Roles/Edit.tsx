@@ -33,7 +33,7 @@ export default function RolesEdit({ role }: Props) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Roles & Permissions', href: route('roles.index') }, { label: role.name }]}>
             <Head title={`Edit role · ${role.name}`} />
 
             <div className="mx-auto max-w-lg space-y-8">

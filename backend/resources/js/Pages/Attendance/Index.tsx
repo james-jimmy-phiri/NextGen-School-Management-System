@@ -101,37 +101,40 @@ export default function AttendanceIndex() {
         );
     };
 
+    const breadcrumbs = [
+        { label: 'Attendance' },
+    ];
+
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <AuthenticatedLayout breadcrumbs={breadcrumbs}>
+            <Head title="Attendance" />
+
+            <div className="school-app">
+                {/* Page Header */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Smart Attendance Fabric</h2>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                                Live Telemetry
-                            </span>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 leading-none">
+                            SCHOOL MANAGEMENT
+                        </p>
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+                            Attendance
+                        </h1>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                             Real-time session reconciliation across offline tablets, biometrics, QR passes, and manual roll-calls
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 shrink-0">
                         <Link
                             href={route('attendance.mark')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 transition-all"
                         >
-                            <ClipboardList className="w-4 h-4 text-emerald-400" />
+                            <ClipboardList className="w-3.5 h-3.5" />
                             Mark Roll Call
                         </Link>
                     </div>
                 </div>
-            }
-        >
-            <Head title="Attendance Fabric" />
 
-            <div className="py-8">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                <div className="space-y-5">
 
                     {/* ─── 4 Top Stat Cards (Inspiration 28a7ac6fdfdcf1ae3d57372e145810db.webp) ─ */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

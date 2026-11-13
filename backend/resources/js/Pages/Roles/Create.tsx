@@ -20,7 +20,7 @@ export default function RolesCreate() {
     };
 
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Roles & Permissions', href: route('roles.index') }, { label: 'Create Role' }]}>
             <Head title="Create role" />
 
             <div className="mx-auto max-w-lg space-y-8">

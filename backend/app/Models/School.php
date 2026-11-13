@@ -12,7 +12,7 @@ class School extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $appends = ['logo_url'];
+    protected $appends = ['logo_url', 'school_code'];
 
     protected $fillable = [
         // Core identity

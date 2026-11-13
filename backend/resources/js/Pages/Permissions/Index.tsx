@@ -34,7 +34,7 @@ export default function PermissionsIndex({ permissionsByModule, total, canRegist
     const modules = Object.keys(permissionsByModule).sort((a, b) => a.localeCompare(b));
 
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Permissions & Access Matrix' }]}>
             <Head title="Permissions & Access Matrix" />
 
             <div className="space-y-8">
